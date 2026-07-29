@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EPX Nexus</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <svg viewBox="0 0 60 60" class="logo-icon" aria-hidden="true">
+      <path d="M10 12 L14 8 L18 12 L14 16 Z M6 20 L10 16 L14 20 L10 24 Z M6 30 L10 26 L14 30 L10 34 Z"
+            fill="none" stroke="var(--slate)" stroke-width="2" opacity="0" />
+      <g transform="translate(6,6) scale(0.8)">
+        <path d="M4 24a20 20 0 0 1 3-10 M6 10a20 20 0 0 1 12-8 M35 6a20 20 0 0 1 10 12 M44 32a20 20 0 0 1-4 12"
+              fill="none" stroke="var(--slate)" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 5" opacity="0.5"/>
+      </g>
+      <ellipse cx="30" cy="30" rx="22" ry="9" transform="rotate(28 30 30)" fill="none" stroke="var(--navy)" stroke-width="3"/>
+      <ellipse cx="30" cy="30" rx="22" ry="9" transform="rotate(-28 30 30)" fill="none" stroke="var(--green)" stroke-width="3"/>
+      <circle cx="30" cy="30" r="6.5" fill="var(--navy)"/>
+      <circle cx="48" cy="19" r="3" fill="var(--green)"/>
+      <circle cx="12" cy="41" r="2.5" fill="var(--navy)"/>
+    </svg>
+    <span class="logo-text-block">
+      <span class="logo-text">EP<span class="logo-accent">X</span> NEXUS</span>
+      <span class="logo-subtitle">Hvor teori møder praksis</span>
+    </span>
+  </div>
+  <div class="topbar-right">
+    <button class="link-btn" type="button">❓ Hjælp</button>
+    <div id="userArea"></div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <div class="page-header">
+    <h1>Skab et relevant og praksisnært forløb</h1>
+    <p>Vælg dine input – vi foreslår et forløb, der kobler dit fag til erhverv og praksis.</p>
+    <a href="erhverv.html?guided=1" class="btn-guide">🧭 Guide mig igennem forløbet</a>
+  </div>
+
+  <!-- Venstre: trin-menu -->
+  <nav class="steps" aria-label="Trin i forløbet">
+    <ol id="stepList">
+      <li data-step="1" class="active">
+        <span class="step-dot step-navy">1</span>
+        <span class="step-label">Dit fag</span>
+      </li>
+      <li data-step="2">
+        <span class="step-dot step-green">2</span>
+        <span class="step-label">Dine input</span>
+      </li>
+      <li data-step="3">
+        <span class="step-dot step-navy">3</span>
+        <span class="step-label">Særlige ønsker</span>
+      </li>
+      <li data-step="4">
+        <span class="step-dot step-slate">4</span>
+        <span class="step-label">Afklaring</span>
+      </li>
+      <li data-step="5">
+        <span class="step-dot step-green">5</span>
+        <span class="step-label">Lærer­vejledning</span>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Midt: formular -->
+  <section class="form-panel">
+
+    <div class="form-card">
+      <h2><span class="mini-num">1</span> Dit fag</h2>
+      <select id="fag">
+        <option value="">Vælg fag</option>
+        <option selected>Matematik</option>
+        <option>Dansk</option>
+        <option>Erhvervsøkonomi</option>
+        <option>Samfundsfag</option>
+        <option>Andet fag</option>
+      </select>
+      <div id="fagAndetWrap" hidden style="margin-top:12px;">
+        <label for="fagAndet">Hvilket fag?</label>
+        <input type="text" id="fagAndet" placeholder="Skriv fagets navn ..." />
+      </div>
+    </div>
+
+    <div class="form-card" id="dineInputCard">
+      <h2><span class="mini-num">2</span> Dine input</h2>
+      <p class="hint">Vælg dine input for at skræddersy forslaget til din undervisning.</p>
+      <div class="input-grid">
+        <a class="input-tile" data-key="erhverv" id="tile-erhverv" href="erhverv.html">
+          <span class="tile-icon i-green">💼</span>
+          <div>
+            <div class="tile-title">Erhverv</div>
+            <div class="tile-sub" id="erhvervTileSub">Vælg et eller flere erhvervsområder</div>
+          </div>
+          <span class="tile-chev">›</span>
+        </a>
+        <div class="input-tile" data-key="lokaler">
+          <span class="tile-icon i-navy">🏢</span>
+          <div>
+            <div class="tile-title">Lokaler og udstyr</div>
+            <div class="tile-sub">Vælg tilgængelige faciliteter og udstyr</div>
+          </div>
+          <span class="tile-chev">›</span>
+        </div>
+        <div class="input-tile" data-key="paedagogisk">
+          <span class="tile-icon i-purple">🧑‍🏫</span>
+          <div>
+            <div class="tile-title">Pædagogisk tilgang</div>
+            <div class="tile-sub">Vælg den tilgang, der passer til din undervisning</div>
+          </div>
+          <span class="tile-chev">›</span>
+        </div>
+        <div class="input-tile" data-key="didaktisk">
+          <span class="tile-icon i-blue">📄</span>
+          <div>
+            <div class="tile-title">Didaktisk tilgang</div>
+            <div class="tile-sub">Vælg den didaktiske tilgang til forløbet</div>
+          </div>
+          <span class="tile-chev">›</span>
+        </div>
+        <div class="input-tile" data-key="formaal">
+          <span class="tile-icon i-navy">🎯</span>
+          <div>
+            <div class="tile-title">Formål og tidsramme</div>
+            <div class="tile-sub">Vælg formål med forløbet og antal lektioner</div>
+          </div>
+          <span class="tile-chev">›</span>
+        </div>
+        <div class="input-tile" data-key="forudsaetninger">
+          <span class="tile-icon i-purple">📊</span>
+          <div>
+            <div class="tile-title">Elevernes forudsætninger</div>
+            <div class="tile-sub">Vælg holdets faglige niveau</div>
+          </div>
+          <span class="tile-chev">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h2><span class="mini-num">3</span> Særlige ønsker? (Fritekst)</h2>
+      <p class="hint">Beskriv eventuelle fokuspunkter, målgrupper eller konkrete ønsker, vi skal tage højde for i forslaget.</p>
+      <textarea id="saerligeOensker" maxlength="500" placeholder="Skriv dine ønsker her..."></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 500</div>
+    </div>
+
+    <div class="form-card clarify" id="afklaringCard">
+      <h2><span class="mini-num">4</span> Afklaring</h2>
+      <p class="hint">På epx er elevernes afklaring om uddannelse og erhverv en integreret del af undervisningen. Fortæl os, hvor eleverne står, så forslaget indeholder aktiviteter, der understøtter netop deres afklaring.</p>
+      <div>
+        <label for="afklaringsgrad">Elevernes afklaringsgrad</label>
+        <select id="afklaringsgrad">
+          <option value="">Vælg afklaringsgrad</option>
+          <option>Uafklarede – kender endnu ikke deres interesser eller retning</option>
+          <option>Delvist afklarede – har en idé, men er i tvivl</option>
+          <option>Afklarede – har valgt retning og ønsker fordybelse</option>
+        </select>
+      </div>
+      <div style="margin-top:14px;">
+        <label>Fokus for afklaringen <span class="optional-tag">(vælg gerne flere)</span></label>
+        <div class="checkbox-list" id="afklaringsfokusGroup">
+          <label class="checkbox-item"><input type="checkbox" name="afklaringsfokus" value="Kendskab til erhverv og professioner" /> <span>Kendskab til erhverv og professioner</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="afklaringsfokus" value="Egne styrker og interesser" /> <span>Egne styrker og interesser</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="afklaringsfokus" value="Sammenhæng mellem faget og praksis" /> <span>Sammenhæng mellem faget og praksis</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="afklaringsfokus" value="Uddannelsesveje efter epx" /> <span>Uddannelsesveje efter epx</span></label>
+        </div>
+      </div>
+      <button id="afklaringSkipBtn" class="btn-skip" type="button">Ikke relevant</button>
+    </div>
+
+    <div class="form-card">
+      <h2><span class="mini-num">5</span> Lærervejledning</h2>
+      <div class="guidance-row">
+        <span>📘</span>
+        <span>Se den samlede vejledning med baggrund, anbefalinger, aktiviteter og didaktiske overvejelser til dit forløb.</span>
+        <span class="tile-chev">›</span>
+      </div>
+    </div>
+
+    <button id="generateBtn" class="btn-primary" type="button">✨ Generér forslag</button>
+  </section>
+
+  <!-- Højre: forslag -->
+  <aside class="suggestion-panel">
+    <div class="print-letterhead" aria-hidden="true">
+      <div class="print-logo">EPX <span>NEXUS</span></div>
+      <div class="print-meta">Forløbsforslag · <span id="printDate"></span></div>
+    </div>
+
+    <div class="suggestion-header">
+      <h2>Dit forslag</h2>
+      <div class="suggestion-header-right">
+        <span class="badge-generated" id="genBadge" hidden>Genereret forslag</span>
+        <button class="btn-icon-print" id="printAllBtn" type="button" hidden title="Print/download hele forslaget">🖨️</button>
+        <button class="btn-icon-print" id="newForlobBtn" type="button" hidden title="Opret nyt forløb">➕</button>
+      </div>
+    </div>
+
+    <div id="suggestionEmpty" class="empty-state">
+      <p>Udfyld Afklaring og dine input til venstre, og tryk på <strong>Generér forslag</strong> for at få et forslag.</p>
+    </div>
+
+    <div id="suggestionContent" hidden>
+      <div class="hero-card" id="heroCard">
+        <img id="heroImg" src="" alt="" />
+        <span class="hero-tag" id="heroTag"></span>
+        <div class="hero-text">
+          <h3 id="heroTitle"></h3>
+          <p id="heroSubtitle"></p>
+        </div>
+      </div>
+
+      <ul class="suggestion-sections" id="suggestionSections"></ul>
+
+      <button class="btn-secondary" type="button">Vis alternative erhverv <span>›</span></button>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Modal: info om at forslaget ikke gemmes automatisk uden login -->
+<div class="modal-overlay" id="saveModalOverlay" hidden>
+  <div class="modal-box">
+    <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Luk">✕</button>
+    <h3>Du er ikke logget ind</h3>
+    <p>Forslaget bliver <strong>ikke</strong> gemt automatisk. Log ind eller opret en bruger for at gemme dine forløb permanent. Når du har set forslaget igennem, kan du altid downloade det som PDF.</p>
+    <div class="modal-actions">
+      <a href="opret-bruger.html" class="btn-primary" id="modalCreateUserBtn">👤 Log ind / opret bruger</a>
+    </div>
+  </div>
+</div>
+
+<script src="epx-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

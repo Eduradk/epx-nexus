@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Forslag – EPX Nexus</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <svg viewBox="0 0 60 60" class="logo-icon" aria-hidden="true">
+      <g transform="translate(6,6) scale(0.8)">
+        <path d="M4 24a20 20 0 0 1 3-10 M6 10a20 20 0 0 1 12-8 M35 6a20 20 0 0 1 10 12 M44 32a20 20 0 0 1-4 12"
+              fill="none" stroke="var(--slate)" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 5" opacity="0.5"/>
+      </g>
+      <ellipse cx="30" cy="30" rx="22" ry="9" transform="rotate(28 30 30)" fill="none" stroke="var(--navy)" stroke-width="3"/>
+      <ellipse cx="30" cy="30" rx="22" ry="9" transform="rotate(-28 30 30)" fill="none" stroke="var(--green)" stroke-width="3"/>
+      <circle cx="30" cy="30" r="6.5" fill="var(--navy)"/>
+      <circle cx="48" cy="19" r="3" fill="var(--green)"/>
+      <circle cx="12" cy="41" r="2.5" fill="var(--navy)"/>
+    </svg>
+    <span class="logo-text-block">
+      <span class="logo-text">EP<span class="logo-accent">X</span> NEXUS</span>
+      <span class="logo-subtitle">Hvor teori møder praksis</span>
+    </span>
+  </div>
+  <div class="topbar-right">
+    <button class="link-btn" type="button">❓ Hjælp</button>
+    <div id="userArea"></div>
+  </div>
+</header>
+
+<div class="subpage">
+  <a href="index.html" class="back-link">← Tilbage til forslaget</a>
+
+  <div class="print-letterhead" aria-hidden="true">
+    <div class="print-logo">EPX <span>NEXUS</span></div>
+    <div class="print-meta">Forløbsforslag · <span id="printDate"></span></div>
+  </div>
+
+  <div class="subpage-header">
+    <span class="subpage-eyebrow">Dit forslag</span>
+    <h1 id="sektionTitel">Indlæser …</h1>
+  </div>
+
+  <div class="detail-toolbar" id="detailToolbar">
+    <button class="btn-tool" id="aiToggleBtn" type="button">✨ Justér med AI</button>
+    <button class="btn-tool" id="editToggleBtn" type="button">✏️ Rediger manuelt</button>
+    <button class="btn-tool" id="printBtn" type="button">🖨️ Print/download denne side</button>
+  </div>
+
+  <div class="ai-assist" id="aiAssist" hidden>
+    <label for="aiInstruction">Hvad skal justeres?</label>
+    <textarea id="aiInstruction" placeholder="Fx: Gør sproget mere enkelt, eller tilføj et eksempel med genbrugsmaterialer ..."></textarea>
+    <button class="btn-primary" id="aiGenerateBtn" type="button">✨ Generér justering</button>
+    <p class="ai-note">Dette er en prototype – i den fulde version sender dette en anmodning til Claude, som skriver et opdateret forslag til dette afsnit.</p>
+  </div>
+
+  <div class="edit-area" id="editArea" hidden>
+    <textarea id="editTextarea"></textarea>
+    <div class="edit-actions">
+      <button class="btn-primary" id="saveEditBtn" type="button">💾 Gem ændringer</button>
+      <button class="btn-tool" id="cancelEditBtn" type="button">Annullér</button>
+    </div>
+  </div>
+
+  <div class="sub-card">
+    <div id="aiBadgeHolder"></div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
+<script src="epx-data.js"></script>
+<script src="forslag-detalje.js"></script>
+</body>
+</html>

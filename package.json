@@ -1,0 +1,12 @@
+{
+  "name": "epx-nexus",
+  "version": "0.1.0",
+  "description": "EPX Nexus - klikbar prototype",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
