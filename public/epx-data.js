@@ -113,6 +113,106 @@ function renderTopbarAuth() {
 }
 document.addEventListener("DOMContentLoaded", renderTopbarAuth);
 
+// Rækkefølge for "Guide mig igennem forløbet" på tværs af "Dine input"-undersiderne
+const DINE_INPUT_REKKEFOLGE = ["erhverv", "lokaler", "paedagogisk", "didaktisk", "formaal", "forudsaetninger"];
+
+function dineInputUrl(key, guided) {
+  const base = key === "erhverv" ? "erhverv.html" : "dine-input.html?felt=" + key;
+  if (!guided) return base;
+  return base + (base.indexOf("?") > -1 ? "&" : "?") + "guided=1";
+}
+
+function naesteDineInputTrin(nuvaerendeKey) {
+  const i = DINE_INPUT_REKKEFOLGE.indexOf(nuvaerendeKey);
+  return i > -1 && i < DINE_INPUT_REKKEFOLGE.length - 1 ? DINE_INPUT_REKKEFOLGE[i + 1] : null;
+}
+
+// Konfiguration for de generiske "Dine input"-undersider (alle undtagen Erhverv, som har sin egen side)
+const DINE_INPUT_FELTER = {
+  lokaler: {
+    titel: "Lokaler og udstyr",
+    ikon: "🏢",
+    intro: "Vælg de faciliteter og det udstyr, I har adgang til, så forslaget tilpasses jeres muligheder.",
+    type: "checkbox",
+    muligheder: [
+      { navn: "Værksted (træ/metal)", ikon: "🔨" },
+      { navn: "Naturfagslokale/laboratorium", ikon: "🧪" },
+      { navn: "Idrætshal/gymnastiksal", ikon: "🏀" },
+      { navn: "Udendørsareal/have", ikon: "🌳" },
+      { navn: "IT-lokale/computere", ikon: "💻" },
+      { navn: "Køkken", ikon: "🍳" },
+      { navn: "3D-printer/digital fabrikation", ikon: "🖨️" },
+      { navn: "Kun almindeligt klasselokale", ikon: "🪑" }
+    ],
+    fritekstLabel: "Andet udstyr eller lokale",
+    fritekstPlaceholder: "Fx adgang til et bestemt værksted eller udlånt udstyr ..."
+  },
+  paedagogisk: {
+    titel: "Pædagogisk tilgang",
+    ikon: "🧑‍🏫",
+    intro: "Vælg den eller de tilgange, der passer bedst til din undervisning (vælg gerne flere).",
+    type: "checkbox",
+    muligheder: [
+      { navn: "Projektbaseret læring", ikon: "📁" },
+      { navn: "Undersøgelsesbaseret / eksperimenterende", ikon: "🔍" },
+      { navn: "Cases og virkelighedsnære problemstillinger", ikon: "🧩" },
+      { navn: "Klasseundervisning med praktiske øvelser", ikon: "📝" },
+      { navn: "Gruppearbejde og samarbejde", ikon: "🤝" },
+      { navn: "Individuel fordybelse", ikon: "🎯" }
+    ],
+    fritekstLabel: "Andre pædagogiske overvejelser",
+    fritekstPlaceholder: "Fx særlige hensyn til klassens sammensætning ..."
+  },
+  didaktisk: {
+    titel: "Didaktisk tilgang",
+    ikon: "📄",
+    intro: "Vælg den didaktiske tilgang til forløbet (vælg gerne flere).",
+    type: "checkbox",
+    muligheder: [
+      { navn: "Praksis før teori", ikon: "🛠️" },
+      { navn: "Teori før praksis", ikon: "📖" },
+      { navn: "Induktiv tilgang (fra eksempel til teori)", ikon: "🔄" },
+      { navn: "Tværfagligt samspil", ikon: "🔗" },
+      { navn: "Stilladsering (trinvis stigende sværhedsgrad)", ikon: "🪜" }
+    ],
+    fritekstLabel: "Andre didaktiske overvejelser",
+    fritekstPlaceholder: "Fx ønsker til progression i forløbet ..."
+  },
+  formaal: {
+    titel: "Formål og tidsramme",
+    ikon: "🎯",
+    intro: "Vælg formålet med forløbet, og hvor mange lektioner det skal fylde.",
+    type: "select-group",
+    felter: [
+      {
+        id: "formaalValg",
+        label: "Formål med forløbet",
+        muligheder: ["Introduktion til nyt emne", "Fordybelse", "Repetition", "Prøveforberedelse"]
+      },
+      {
+        id: "tidsrammeValg",
+        label: "Tidsramme",
+        muligheder: ["1-2 lektioner", "3-5 lektioner", "Et helt forløb (6+)"]
+      }
+    ]
+  },
+  forudsaetninger: {
+    titel: "Elevernes forudsætninger",
+    ikon: "📊",
+    intro: "Vælg holdets faglige niveau i faget.",
+    type: "select-group",
+    felter: [
+      {
+        id: "niveauValg",
+        label: "Fagligt niveau",
+        muligheder: ["Nybegyndere", "Har grundlæggende viden", "Øvede", "Blandet niveau"]
+      }
+    ],
+    fritekstLabel: "Særlige opmærksomhedspunkter",
+    fritekstPlaceholder: "Fx elever med behov for ekstra støtte eller ekstra udfordring ..."
+  }
+};
+
 // Billede pr. gren til "Dit forslag" – udelades hvis intet erhvervsområde er valgt
 const GREN_BILLEDER = {
   samfund: "https://images.unsplash.com/photo-1584515933487-779824d29309?w=700&auto=format&fit=crop&q=60",

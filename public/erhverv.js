@@ -58,5 +58,12 @@ nextBtn.addEventListener("click", () => {
   });
   const params = new URLSearchParams(window.location.search);
   const guided = params.get("guided") === "1";
-  window.location.href = "index.html?justCompleted=erhverv" + (guided ? "&guided=1" : "");
+  const naeste = guided ? naesteDineInputTrin("erhverv") : null;
+  if (naeste) {
+    window.location.href = dineInputUrl(naeste, true);
+  } else if (guided) {
+    window.location.href = "index.html?justCompleted=erhverv&guided=1&guideFaerdig=1";
+  } else {
+    window.location.href = "index.html?justCompleted=erhverv";
+  }
 });

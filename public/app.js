@@ -118,38 +118,69 @@ afklaringSkipBtn.addEventListener("click", () => {
   saveFormState();
 });
 
-// ---- Dine input: vis gemte valg for Erhverv og håndter tilbageløb fra guiden ----
+// ---- Dine input: vis gemte valg for alle felter og håndter tilbageløb fra guiden ----
 (function () {
-  const erhvervTile = document.getElementById("tile-erhverv");
-  const erhvervSub = document.getElementById("erhvervTileSub");
-  if (!erhvervTile) return;
+  const DINE_INPUT_LABELS = {
+    erhverv: { titel: "Erhverv", standard: "Vælg et eller flere erhvervsområder" },
+    lokaler: { titel: "Lokaler og udstyr", standard: "Vælg tilgængelige faciliteter og udstyr" },
+    paedagogisk: { titel: "Pædagogisk tilgang", standard: "Vælg den tilgang, der passer til din undervisning" },
+    didaktisk: { titel: "Didaktisk tilgang", standard: "Vælg den didaktiske tilgang til forløbet" },
+    formaal: { titel: "Formål og tidsramme", standard: "Vælg formål med forløbet og antal lektioner" },
+    forudsaetninger: { titel: "Elevernes forudsætninger", standard: "Vælg holdets faglige niveau" }
+  };
 
-  function renderErhvervTile() {
-    const data = EpxState.get().erhverv;
-    if (data && data.hovedomraade) {
+  function summarize(key, data) {
+    if (key === "erhverv") {
+      if (!data || !data.hovedomraade) return null;
       const gren = EPX_GRENE.find((g) => g.id === data.hovedomraade);
       const antal = (data.specifikke || []).length;
-      erhvervSub.textContent = gren
-        ? gren.navn + (antal ? " · " + antal + " erhverv valgt" : "")
-        : "Udfyldt";
-      erhvervTile.classList.add("filled");
+      return gren ? gren.navn + (antal ? " · " + antal + " erhverv valgt" : "") : "Udfyldt";
+    }
+    const felt = DINE_INPUT_FELTER[key];
+    if (!felt || !data) return null;
+    if (felt.type === "checkbox") {
+      const valgt = data.valgt || [];
+      if (!valgt.length) return data.fritekst ? "Note tilføjet" : null;
+      return valgt.length + " valgt: " + valgt.slice(0, 2).join(", ") + (valgt.length > 2 ? " m.fl." : "");
+    }
+    if (felt.type === "select-group") {
+      const vaerdier = felt.felter.map((f) => data[f.id]).filter(Boolean);
+      return vaerdier.length ? vaerdier.join(" · ") : null;
+    }
+    return "Udfyldt";
+  }
+
+  function renderTile(key) {
+    const tile = document.getElementById("tile-" + key);
+    const sub = document.getElementById(key + "TileSub");
+    if (!tile || !sub) return;
+    const resume = summarize(key, EpxState.get()[key]);
+    if (resume) {
+      sub.textContent = resume;
+      tile.classList.add("filled");
     } else {
-      erhvervSub.textContent = "Vælg et eller flere erhvervsområder";
-      erhvervTile.classList.remove("filled");
+      sub.textContent = DINE_INPUT_LABELS[key].standard;
+      tile.classList.remove("filled");
     }
   }
-  renderErhvervTile();
+  DINE_INPUT_REKKEFOLGE.forEach(renderTile);
 
   const params = new URLSearchParams(window.location.search);
-  if (params.get("justCompleted") === "erhverv") {
+  const justCompleted = params.get("justCompleted");
+  if (justCompleted && DINE_INPUT_LABELS[justCompleted]) {
     const dineInputCard = document.getElementById("dineInputCard");
     const banner = document.createElement("div");
     banner.className = "toast-banner";
     const text = document.createElement("span");
-    text.textContent =
-      params.get("guided") === "1"
-        ? "✅ Erhverv er gemt. De næste trin i guiden (Lokaler og udstyr m.fl.) er under opbygning – vælg selv videre for nu."
-        : "✅ Erhverv er gemt.";
+    const guided = params.get("guided") === "1";
+    const guideFaerdig = params.get("guideFaerdig") === "1";
+    if (guideFaerdig) {
+      text.textContent = "🎉 " + DINE_INPUT_LABELS[justCompleted].titel + " er gemt – du er nu igennem alle \"Dine input\"!";
+    } else if (guided) {
+      text.textContent = "✅ " + DINE_INPUT_LABELS[justCompleted].titel + " er gemt. Fortsætter til næste trin i guiden.";
+    } else {
+      text.textContent = "✅ " + DINE_INPUT_LABELS[justCompleted].titel + " er gemt.";
+    }
     banner.appendChild(text);
     const closeBtn = document.createElement("button");
     closeBtn.type = "button";
@@ -159,8 +190,11 @@ afklaringSkipBtn.addEventListener("click", () => {
     dineInputCard.parentNode.insertBefore(banner, dineInputCard);
 
     dineInputCard.scrollIntoView({ behavior: "smooth", block: "start" });
-    erhvervTile.classList.add("pulse");
-    setTimeout(() => erhvervTile.classList.remove("pulse"), 3000);
+    const justTile = document.getElementById("tile-" + justCompleted);
+    if (justTile) {
+      justTile.classList.add("pulse");
+      setTimeout(() => justTile.classList.remove("pulse"), 3000);
+    }
 
     window.history.replaceState({}, "", window.location.pathname);
   }
