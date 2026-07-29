@@ -165,6 +165,13 @@ afklaringSkipBtn.addEventListener("click", () => {
   }
   DINE_INPUT_REKKEFOLGE.forEach(renderTile);
 
+  // "Guide mig igennem forløbet" peger altid på det første felt, der endnu ikke er udfyldt
+  const guideBtn = document.getElementById("guideBtn");
+  if (guideBtn) {
+    const foerste = foersteUdfyldelsesTrin();
+    guideBtn.href = foerste ? dineInputUrl(foerste) : "erhverv.html";
+  }
+
   const params = new URLSearchParams(window.location.search);
   const justCompleted = params.get("justCompleted");
   if (justCompleted && DINE_INPUT_LABELS[justCompleted]) {
@@ -172,15 +179,10 @@ afklaringSkipBtn.addEventListener("click", () => {
     const banner = document.createElement("div");
     banner.className = "toast-banner";
     const text = document.createElement("span");
-    const guided = params.get("guided") === "1";
-    const guideFaerdig = params.get("guideFaerdig") === "1";
-    if (guideFaerdig) {
-      text.textContent = "🎉 " + DINE_INPUT_LABELS[justCompleted].titel + " er gemt – du er nu igennem alle \"Dine input\"!";
-    } else if (guided) {
-      text.textContent = "✅ " + DINE_INPUT_LABELS[justCompleted].titel + " er gemt. Fortsætter til næste trin i guiden.";
-    } else {
-      text.textContent = "✅ " + DINE_INPUT_LABELS[justCompleted].titel + " er gemt.";
-    }
+    const alleFaerdig = params.get("alleFaerdig") === "1";
+    text.textContent = alleFaerdig
+      ? "🎉 " + DINE_INPUT_LABELS[justCompleted].titel + " er gemt – du har nu udfyldt alle \"Dine input\"!"
+      : "✅ " + DINE_INPUT_LABELS[justCompleted].titel + " er gemt.";
     banner.appendChild(text);
     const closeBtn = document.createElement("button");
     closeBtn.type = "button";

@@ -113,18 +113,11 @@ function renderTopbarAuth() {
 }
 document.addEventListener("DOMContentLoaded", renderTopbarAuth);
 
-// Rækkefølge for "Guide mig igennem forløbet" på tværs af "Dine input"-undersiderne
+// Rækkefølge for "Dine input"-undersiderne, når man klikker "Gem og fortsæt"
 const DINE_INPUT_REKKEFOLGE = ["erhverv", "lokaler", "paedagogisk", "didaktisk", "formaal", "forudsaetninger"];
 
-function dineInputUrl(key, guided) {
-  const base = key === "erhverv" ? "erhverv.html" : "dine-input.html?felt=" + key;
-  if (!guided) return base;
-  return base + (base.indexOf("?") > -1 ? "&" : "?") + "guided=1";
-}
-
-function naesteDineInputTrin(nuvaerendeKey) {
-  const i = DINE_INPUT_REKKEFOLGE.indexOf(nuvaerendeKey);
-  return i > -1 && i < DINE_INPUT_REKKEFOLGE.length - 1 ? DINE_INPUT_REKKEFOLGE[i + 1] : null;
+function dineInputUrl(key) {
+  return key === "erhverv" ? "erhverv.html" : "dine-input.html?felt=" + key;
 }
 
 // Konfiguration for de generiske "Dine input"-undersider (alle undtagen Erhverv, som har sin egen side)
@@ -212,6 +205,38 @@ const DINE_INPUT_FELTER = {
     fritekstPlaceholder: "Fx elever med behov for ekstra støtte eller ekstra udfordring ..."
   }
 };
+
+// Har brugeren reelt udfyldt noget i dette "Dine input"-felt?
+function erFeltUdfyldt(key) {
+  const data = EpxState.get()[key];
+  if (!data) return false;
+  if (key === "erhverv") return !!data.hovedomraade;
+  const felt = DINE_INPUT_FELTER[key];
+  if (!felt) return !!data;
+  if (felt.type === "checkbox") return !!((data.valgt && data.valgt.length) || data.fritekst);
+  if (felt.type === "select-group") return felt.felter.some((f) => !!data[f.id]);
+  return true;
+}
+
+// Finder det næste IKKE-udfyldte "Dine input"-felt (springer over dem, der allerede er udfyldt).
+// Returnerer null, når alle felter er udfyldt.
+function naesteUdfyldelsesTrin(nuvaerendeKey) {
+  const startIndex = DINE_INPUT_REKKEFOLGE.indexOf(nuvaerendeKey);
+  for (let i = 1; i <= DINE_INPUT_REKKEFOLGE.length; i++) {
+    const key = DINE_INPUT_REKKEFOLGE[(startIndex + i) % DINE_INPUT_REKKEFOLGE.length];
+    if (key === nuvaerendeKey) continue;
+    if (!erFeltUdfyldt(key)) return key;
+  }
+  return null;
+}
+
+// Første udfyldte felt overhovedet – bruges af "Guide mig igennem forløbet" på forsiden
+function foersteUdfyldelsesTrin() {
+  for (let i = 0; i < DINE_INPUT_REKKEFOLGE.length; i++) {
+    if (!erFeltUdfyldt(DINE_INPUT_REKKEFOLGE[i])) return DINE_INPUT_REKKEFOLGE[i];
+  }
+  return null;
+}
 
 // Billede pr. gren til "Dit forslag" – udelades hvis intet erhvervsområde er valgt
 const GREN_BILLEDER = {

@@ -84,14 +84,11 @@ if (!felt) {
     }
     EpxState.set(feltKey, data);
 
-    const guided = params.get("guided") === "1";
-    const naeste = guided ? naesteDineInputTrin(feltKey) : null;
+    const naeste = naesteUdfyldelsesTrin(feltKey);
     if (naeste) {
-      window.location.href = dineInputUrl(naeste, true);
-    } else if (guided) {
-      window.location.href = "index.html?justCompleted=" + feltKey + "&guided=1&guideFaerdig=1";
+      window.location.href = dineInputUrl(naeste);
     } else {
-      window.location.href = "index.html?justCompleted=" + feltKey;
+      window.location.href = "index.html?justCompleted=" + feltKey + "&alleFaerdig=1";
     }
   });
 }

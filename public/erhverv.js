@@ -56,14 +56,10 @@ nextBtn.addEventListener("click", () => {
     specifikke: specifikke,
     fritekst: fritekst.value
   });
-  const params = new URLSearchParams(window.location.search);
-  const guided = params.get("guided") === "1";
-  const naeste = guided ? naesteDineInputTrin("erhverv") : null;
+  const naeste = naesteUdfyldelsesTrin("erhverv");
   if (naeste) {
-    window.location.href = dineInputUrl(naeste, true);
-  } else if (guided) {
-    window.location.href = "index.html?justCompleted=erhverv&guided=1&guideFaerdig=1";
+    window.location.href = dineInputUrl(naeste);
   } else {
-    window.location.href = "index.html?justCompleted=erhverv";
+    window.location.href = "index.html?justCompleted=erhverv&alleFaerdig=1";
   }
 });
