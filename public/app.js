@@ -17,9 +17,50 @@ stepItems.forEach((item) => {
   });
 });
 
+// ---- Gem/genindlæs formularfelter, så de ikke nulstilles ved navigation til en underside og tilbage ----
+function saveFormState() {
+  EpxState.set("fag", document.getElementById("fag").value);
+  EpxState.set("fagAndet", document.getElementById("fagAndet").value);
+  EpxState.set("saerligeOensker", saerligeOensker.value);
+  EpxState.set("afklaringsgrad", document.getElementById("afklaringsgrad").value);
+  EpxState.set(
+    "afklaringsfokus",
+    Array.from(document.querySelectorAll('input[name="afklaringsfokus"]:checked')).map((cb) => cb.value)
+  );
+  EpxState.set("afklaringSkipped", afklaringSkipped);
+}
+
+function restoreFormState() {
+  const data = EpxState.get();
+  if (data.fag) {
+    document.getElementById("fag").value = data.fag;
+    document.getElementById("fagAndetWrap").hidden = data.fag !== "Andet fag";
+  }
+  if (data.fagAndet) document.getElementById("fagAndet").value = data.fagAndet;
+  if (data.saerligeOensker) {
+    saerligeOensker.value = data.saerligeOensker;
+    charCount.textContent = data.saerligeOensker.length;
+  }
+  if (data.afklaringsgrad) document.getElementById("afklaringsgrad").value = data.afklaringsgrad;
+  if (data.afklaringsfokus) {
+    data.afklaringsfokus.forEach((val) => {
+      const cb = document.querySelector('input[name="afklaringsfokus"][value="' + val + '"]');
+      if (cb) cb.checked = true;
+    });
+  }
+  if (data.afklaringSkipped) {
+    afklaringSkipped = true;
+    afklaringCard.classList.add("skipped");
+    afklaringSkipBtn.classList.add("active");
+    afklaringSkipBtn.textContent = "Fortryd – afklaring er relevant";
+  }
+}
+restoreFormState();
+
 // Tæller tegn i "Særlige ønsker"
 saerligeOensker.addEventListener("input", () => {
   charCount.textContent = saerligeOensker.value.length;
+  saveFormState();
 });
 
 // Markér trin som "gjort" når felterne udfyldes
@@ -41,12 +82,12 @@ function markProgress() {
     }
   });
 }
-document.getElementById("afklaringsgrad").addEventListener("change", markProgress);
+document.getElementById("afklaringsgrad").addEventListener("change", () => { markProgress(); saveFormState(); });
 document.querySelectorAll('input[name="afklaringsfokus"]').forEach((cb) => {
-  cb.addEventListener("change", markProgress);
+  cb.addEventListener("change", () => { markProgress(); saveFormState(); });
 });
-document.getElementById("fag").addEventListener("change", markProgress);
-document.getElementById("fagAndet").addEventListener("input", markProgress);
+document.getElementById("fag").addEventListener("change", () => { markProgress(); saveFormState(); });
+document.getElementById("fagAndet").addEventListener("input", () => { markProgress(); saveFormState(); });
 markProgress();
 
 // "Dit fag": vis fritekstfelt, når "Andet fag" vælges
@@ -74,6 +115,7 @@ afklaringSkipBtn.addEventListener("click", () => {
   afklaringSkipBtn.classList.toggle("active", afklaringSkipped);
   afklaringSkipBtn.textContent = afklaringSkipped ? "Fortryd – afklaring er relevant" : "Ikke relevant";
   markProgress();
+  saveFormState();
 });
 
 // ---- Dine input: vis gemte valg for Erhverv og håndter tilbageløb fra guiden ----
@@ -171,8 +213,8 @@ function renderForslag() {
   });
 }
 
-// "Generér forslag" viser det (dummy) forslag
-generateBtn.addEventListener("click", () => {
+// Viser det genererede forslag i UI'et – bruges både ved klik på "Generér forslag" og ved genindlæsning af siden
+function showForslag(scrollTil) {
   renderForslag();
   suggestionEmpty.hidden = true;
   suggestionContent.hidden = false;
@@ -185,7 +227,20 @@ generateBtn.addEventListener("click", () => {
       item.classList.add("done");
     }
   });
-  suggestionContent.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (scrollTil) {
+    suggestionContent.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+// Genindlæs et allerede genereret forslag, hvis man navigerer tilbage til forsiden
+if (EpxState.get().forslagGenereret) {
+  showForslag(false);
+}
+
+// "Generér forslag" viser det (dummy) forslag
+generateBtn.addEventListener("click", () => {
+  EpxState.set("forslagGenereret", true);
+  showForslag(true);
 
   // Info om manglende login vises kun første gang, man genererer et forslag for dette forløb – og slet ikke hvis man er logget ind
   if (!EpxAuth.isLoggedIn() && !EpxState.get().harVistGemPopup) {
