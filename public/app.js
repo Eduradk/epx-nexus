@@ -236,9 +236,13 @@ function renderForslag() {
     const a = document.createElement("a");
     a.className = "section-link";
     a.href = "forslag-detalje.html?sektion=" + sektion.id;
-    const resume = sektion.id === "udstyr"
-      ? (sektion.udstyr.length + " varer – kan bruges som bestillingsliste til de aktiviteter, der kræver særligt udstyr.")
-      : sektion.resume;
+    let resume = sektion.resume;
+    if (sektion.id === "udstyr") {
+      resume = sektion.udstyr.length + " varer – kan bruges som bestillingsliste til de aktiviteter, der kræver særligt udstyr.";
+    } else if (sektion.dynamisk) {
+      const materialer = genererMaterialer();
+      resume = materialer.length + " AI-genererede materialer klar til brug" + (materialer.some((m) => m.id === "afklaring") ? ", inkl. en afklaringsøvelse" : "") + ".";
+    }
     a.innerHTML =
       '<div class="section-title">' + sektion.ikon + " " + sektion.titel + '<span class="tile-chev">›</span></div>' +
       "<p>" + resume + "</p>";

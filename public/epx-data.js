@@ -221,6 +221,111 @@ const GREN_BILLEDER = {
   haandvaerk: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=700&auto=format&fit=crop&q=60"
 };
 
+// Standardvarsel, der altid vises ved AI-genereret indhold
+const AI_VARSEL = "🤖 AI-genereret materiale. Indholdet er automatisk genereret ud fra dine input og skal gennemgås og kvalitetssikres af underviseren, før det tages i brug.";
+
+// Samler en kort, læsbar liste over de valg, brugeren rent faktisk har tastet ind – bruges til at vise gennemsigtighed i AI-materialer
+function samlBrugerValg() {
+  const data = EpxState.get();
+  const dele = [];
+  if (data.fag) {
+    dele.push(data.fag === "Andet fag" ? (data.fagAndet || "Andet fag") : data.fag);
+  }
+  if (data.erhverv && data.erhverv.hovedomraade) {
+    const gren = EPX_GRENE.find((g) => g.id === data.erhverv.hovedomraade);
+    if (gren) {
+      const specifik = (data.erhverv.specifikke || [])[0];
+      dele.push(gren.navn + (specifik ? " (" + specifik + ")" : ""));
+    }
+  }
+  if (data.paedagogisk && data.paedagogisk.valgt && data.paedagogisk.valgt.length) {
+    dele.push(data.paedagogisk.valgt[0]);
+  }
+  if (data.didaktisk && data.didaktisk.valgt && data.didaktisk.valgt.length) {
+    dele.push(data.didaktisk.valgt[0]);
+  }
+  if (data.formaal && data.formaal.formaalValg) {
+    dele.push(data.formaal.formaalValg);
+  }
+  if (data.saerligeOensker) {
+    dele.push('"' + data.saerligeOensker + '" (Særlige ønsker)');
+  }
+  return dele;
+}
+
+// Genererer (dummy) konkrete øvelser, cases og opgaver – samt evt. en afklaringsøvelse – ud fra brugerens faktiske input
+function genererMaterialer() {
+  const data = EpxState.get();
+  const valgListe = samlBrugerValg();
+  const baseretPaa = valgListe.length
+    ? valgListe.join(" · ")
+    : "ingen valg fra \"Dine input\" endnu – udfyld dem for et mere målrettet materiale";
+
+  const fag = data.fag === "Andet fag" ? (data.fagAndet || "faget") : (data.fag || "faget");
+  const gren = data.erhverv && data.erhverv.hovedomraade
+    ? EPX_GRENE.find((g) => g.id === data.erhverv.hovedomraade)
+    : null;
+  const erhvervNote = (data.erhverv && data.erhverv.specifikke && data.erhverv.specifikke[0])
+    || (gren ? gren.navn : "praksis");
+  const tidsramme = (data.formaal && data.formaal.tidsrammeValg) || "1-2 lektioner";
+
+  const materialer = [
+    {
+      id: "oevelse",
+      type: "Øvelse",
+      ikon: "✏️",
+      titel: fag + "-øvelse: Fra tal til virkelighed",
+      krop: [
+        "Eleverne løser en række korte opgaver, der tager konkret afsæt i " + erhvervNote.toLowerCase() + ".",
+        "Opgaverne stiger gradvist i sværhedsgrad og afsluttes med, at eleverne selv formulerer en lignende opgave til en klassekammerat.",
+        data.saerligeOensker ? "Øvelsen er tilpasset dit ønske om: \"" + data.saerligeOensker + "\"." : null
+      ].filter(Boolean),
+      baseretPaa: baseretPaa
+    },
+    {
+      id: "case",
+      type: "Case",
+      ikon: "📄",
+      titel: "Case: " + erhvervNote,
+      krop: [
+        "Eleverne arbejder i grupper med en virkelighedsnær problemstilling fra " + erhvervNote.toLowerCase() + ".",
+        "Casen indeholder baggrundsmateriale, konkrete data og en klar leverance, som grupperne skal præsentere for klassen.",
+        "Estimeret tidsforbrug: " + tidsramme + "."
+      ],
+      baseretPaa: baseretPaa
+    },
+    {
+      id: "opgave",
+      type: "Opgave",
+      ikon: "📝",
+      titel: "Individuel opgave: Anvend din viden",
+      krop: [
+        "En kort, individuel opgave, eleverne kan løse selvstændigt til evaluering af deres forståelse.",
+        "Opgaven afsluttes med et refleksionsspørgsmål, der kobler tilbage til fagets anvendelse i praksis."
+      ],
+      baseretPaa: baseretPaa
+    }
+  ];
+
+  if (!data.afklaringSkipped && data.afklaringsgrad) {
+    const fokusListe = data.afklaringsfokus || [];
+    materialer.push({
+      id: "afklaring",
+      type: "Afklaringsøvelse",
+      ikon: "🧭",
+      titel: "Afklaringsøvelse: Din vej videre",
+      krop: [
+        "En særskilt øvelse, der understøtter elevens afklaring om studievalg, målrettet elever, der er " + data.afklaringsgrad.split(" – ")[0].toLowerCase() + ".",
+        fokusListe.length ? "Øvelsen har fokus på: " + fokusListe.join(", ") + "." : null,
+        "Eleverne reflekterer skriftligt og mundtligt over sammenhængen mellem dagens faglige indhold og deres egne interesser og fremtidige uddannelsesvalg."
+      ].filter(Boolean),
+      baseretPaa: baseretPaa + " · Afklaringsgrad: " + data.afklaringsgrad + (fokusListe.length ? " · Fokus: " + fokusListe.join(", ") : "")
+    });
+  }
+
+  return materialer;
+}
+
 // Det (dummy) genererede forslag – delt mellem forsiden (resuméer) og detaljesiden (fuldt indhold)
 const FORSLAG_SEKTIONER = [
   {
@@ -278,6 +383,12 @@ const FORSLAG_SEKTIONER = [
       "Forløbet veksler mellem klasseundervisning, gruppearbejde og praktisk arbejde i værksted eller udendørs, hvor det er muligt.",
       "Undervejs indgår korte oplæg fra læreren om centrale matematiske begreber, som eleverne straks omsætter i deres eget arbejde med casen."
     ]
+  },
+  {
+    id: "materialer",
+    ikon: "📚",
+    titel: "Øvelser, cases og opgaver",
+    dynamisk: true
   },
   {
     id: "udstyr",

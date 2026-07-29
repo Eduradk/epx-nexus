@@ -821,6 +821,58 @@ a.input-tile { text-decoration: none; color: inherit; }
 .udstyr-item.checked .udstyr-status { color: var(--green); }
 .udstyr-item:not(.checked) .udstyr-status { color: #b45309; }
 
+/* Øvelser, cases og opgaver: AI-genererede materialer */
+.ai-varsel {
+  background: #fff7e6;
+  border: 1px solid #f0c36d;
+  color: #7a5210;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin: 0 0 18px 0;
+  line-height: 1.5;
+}
+.materiale-kort {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.materiale-kort:last-child { margin-bottom: 0; }
+.materiale-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.materiale-type {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy);
+  background: #e7ecf3;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.materiale-ai-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
+  background: var(--green-light);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.materiale-kort h3 { margin: 0 0 8px 0; font-size: 16px; color: var(--navy); }
+.materiale-kort p { margin: 0 0 8px 0; }
+.materiale-baseret-paa {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 10px 0 0 0 !important;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
 @media print {
   .subpage > .back-link,
   .detail-toolbar,

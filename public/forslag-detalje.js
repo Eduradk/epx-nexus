@@ -131,6 +131,50 @@ function renderUdstyr() {
   detailBody.appendChild(orderBtn);
 }
 
+function renderMaterialer() {
+  aiBadgeHolder.innerHTML = "";
+  detailBody.innerHTML = "";
+
+  const varsel = document.createElement("p");
+  varsel.className = "ai-varsel";
+  varsel.textContent = AI_VARSEL;
+  detailBody.appendChild(varsel);
+
+  genererMaterialer().forEach((m) => {
+    const card = document.createElement("div");
+    card.className = "materiale-kort";
+
+    const header = document.createElement("div");
+    header.className = "materiale-header";
+    const typeTag = document.createElement("span");
+    typeTag.className = "materiale-type";
+    typeTag.textContent = m.ikon + " " + m.type;
+    const aiTag = document.createElement("span");
+    aiTag.className = "materiale-ai-tag";
+    aiTag.textContent = "🤖 AI-genereret";
+    header.appendChild(typeTag);
+    header.appendChild(aiTag);
+    card.appendChild(header);
+
+    const titel = document.createElement("h3");
+    titel.textContent = m.titel;
+    card.appendChild(titel);
+
+    m.krop.forEach((afsnit) => {
+      const p = document.createElement("p");
+      p.textContent = afsnit;
+      card.appendChild(p);
+    });
+
+    const trace = document.createElement("p");
+    trace.className = "materiale-baseret-paa";
+    trace.textContent = "Baseret på dine valg: " + m.baseretPaa;
+    card.appendChild(trace);
+
+    detailBody.appendChild(card);
+  });
+}
+
 function render() {
   if (!sektion) {
     sektionTitelEl.textContent = "Afsnit ikke fundet";
@@ -142,6 +186,10 @@ function render() {
   if (sektion.id === "udstyr") {
     document.getElementById("editToggleBtn").hidden = true;
     renderUdstyr();
+  } else if (sektion.id === "materialer") {
+    document.getElementById("editToggleBtn").hidden = true;
+    document.getElementById("aiToggleBtn").hidden = true;
+    renderMaterialer();
   } else {
     renderKrop();
   }
