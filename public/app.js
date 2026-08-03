@@ -118,52 +118,53 @@ afklaringSkipBtn.addEventListener("click", () => {
   saveFormState();
 });
 
-// ---- Dine input: vis gemte valg for alle felter og håndter tilbageløb fra guiden ----
-(function () {
-  const DINE_INPUT_LABELS = {
-    erhverv: { titel: "Erhverv", standard: "Vælg et eller flere erhvervsområder" },
-    lokaler: { titel: "Lokaler og udstyr", standard: "Vælg tilgængelige faciliteter og udstyr" },
-    paedagogisk: { titel: "Pædagogisk tilgang", standard: "Vælg den tilgang, der passer til din undervisning" },
-    didaktisk: { titel: "Didaktisk tilgang", standard: "Vælg den didaktiske tilgang til forløbet" },
-    formaal: { titel: "Formål og tidsramme", standard: "Vælg formål med forløbet og antal lektioner" },
-    forudsaetninger: { titel: "Elevernes forudsætninger", standard: "Vælg holdets faglige niveau" }
-  };
+// ---- Dine input: vis gemte valg for alle felter (genbruges også efter "Ryd alle felter") ----
+const DINE_INPUT_LABELS = {
+  erhverv: { titel: "Erhverv", standard: "Vælg et eller flere erhvervsområder" },
+  lokaler: { titel: "Lokaler og udstyr", standard: "Vælg tilgængelige faciliteter og udstyr" },
+  paedagogisk: { titel: "Pædagogisk tilgang", standard: "Vælg den tilgang, der passer til din undervisning" },
+  didaktisk: { titel: "Didaktisk tilgang", standard: "Vælg den didaktiske tilgang til forløbet" },
+  formaal: { titel: "Formål og tidsramme", standard: "Vælg formål med forløbet og antal lektioner" },
+  forudsaetninger: { titel: "Elevernes forudsætninger", standard: "Vælg holdets faglige niveau" }
+};
 
-  function summarize(key, data) {
-    if (key === "erhverv") {
-      if (!data || !data.hovedomraade) return null;
-      const gren = EPX_GRENE.find((g) => g.id === data.hovedomraade);
-      const antal = (data.specifikke || []).length;
-      return gren ? gren.navn + (antal ? " · " + antal + " erhverv valgt" : "") : "Udfyldt";
-    }
-    const felt = DINE_INPUT_FELTER[key];
-    if (!felt || !data) return null;
-    if (felt.type === "checkbox") {
-      const valgt = data.valgt || [];
-      if (!valgt.length) return data.fritekst ? "Note tilføjet" : null;
-      return valgt.length + " valgt: " + valgt.slice(0, 2).join(", ") + (valgt.length > 2 ? " m.fl." : "");
-    }
-    if (felt.type === "select-group") {
-      const vaerdier = felt.felter.map((f) => data[f.id]).filter(Boolean);
-      return vaerdier.length ? vaerdier.join(" · ") : null;
-    }
-    return "Udfyldt";
+function summarizeDineInput(key, data) {
+  if (key === "erhverv") {
+    if (!data || !data.hovedomraade) return null;
+    const gren = EPX_GRENE.find((g) => g.id === data.hovedomraade);
+    const antal = (data.specifikke || []).length;
+    return gren ? gren.navn + (antal ? " · " + antal + " erhverv valgt" : "") : "Udfyldt";
   }
+  const felt = DINE_INPUT_FELTER[key];
+  if (!felt || !data) return null;
+  if (felt.type === "checkbox") {
+    const valgt = data.valgt || [];
+    if (!valgt.length) return data.fritekst ? "Note tilføjet" : null;
+    return valgt.length + " valgt: " + valgt.slice(0, 2).join(", ") + (valgt.length > 2 ? " m.fl." : "");
+  }
+  if (felt.type === "select-group") {
+    const vaerdier = felt.felter.map((f) => data[f.id]).filter(Boolean);
+    return vaerdier.length ? vaerdier.join(" · ") : null;
+  }
+  return "Udfyldt";
+}
 
-  function renderTile(key) {
-    const tile = document.getElementById("tile-" + key);
-    const sub = document.getElementById(key + "TileSub");
-    if (!tile || !sub) return;
-    const resume = summarize(key, EpxState.get()[key]);
-    if (resume) {
-      sub.textContent = resume;
-      tile.classList.add("filled");
-    } else {
-      sub.textContent = DINE_INPUT_LABELS[key].standard;
-      tile.classList.remove("filled");
-    }
+function renderDineInputTile(key) {
+  const tile = document.getElementById("tile-" + key);
+  const sub = document.getElementById(key + "TileSub");
+  if (!tile || !sub) return;
+  const resume = summarizeDineInput(key, EpxState.get()[key]);
+  if (resume) {
+    sub.textContent = resume;
+    tile.classList.add("filled");
+  } else {
+    sub.textContent = DINE_INPUT_LABELS[key].standard;
+    tile.classList.remove("filled");
   }
-  DINE_INPUT_REKKEFOLGE.forEach(renderTile);
+}
+
+function renderAlleDineInputTiles() {
+  DINE_INPUT_REKKEFOLGE.forEach(renderDineInputTile);
 
   // "Guide mig igennem forløbet" peger altid på det første felt, der endnu ikke er udfyldt
   const guideBtn = document.getElementById("guideBtn");
@@ -171,7 +172,19 @@ afklaringSkipBtn.addEventListener("click", () => {
     const foerste = foersteUdfyldelsesTrin();
     guideBtn.href = foerste ? dineInputUrl(foerste) : "erhverv.html";
   }
+}
+renderAlleDineInputTiles();
 
+// Er der overhovedet noget gemt fra et tidligere besøg?
+function harGemtUdkast() {
+  const data = EpxState.get();
+  if (data.forslagGenereret || data.fag || data.saerligeOensker || data.afklaringsgrad || data.afklaringSkipped) {
+    return true;
+  }
+  return DINE_INPUT_REKKEFOLGE.some((key) => erFeltUdfyldt(key));
+}
+
+(function () {
   const params = new URLSearchParams(window.location.search);
   const justCompleted = params.get("justCompleted");
   if (justCompleted && DINE_INPUT_LABELS[justCompleted]) {
@@ -199,8 +212,20 @@ afklaringSkipBtn.addEventListener("click", () => {
     }
 
     window.history.replaceState({}, "", window.location.pathname);
+  } else if (harGemtUdkast()) {
+    // Intet lige gemt via en underside, men der findes et ældre, ikke-afsluttet udkast
+    document.getElementById("draftBanner").hidden = false;
   }
 })();
+
+document.getElementById("draftContinueBtn").addEventListener("click", () => {
+  document.getElementById("draftBanner").hidden = true;
+});
+document.getElementById("draftClearBtn").addEventListener("click", () => {
+  document.getElementById("draftBanner").hidden = true;
+  nulstilAlt();
+});
+document.getElementById("ryddeFelterBtn").addEventListener("click", nulstilAlt);
 
 // ---- Byg "Dit forslag": hero-billede (kun hvis erhvervsområde er valgt) + klikbare afsnit ----
 function renderForslag() {
@@ -302,8 +327,8 @@ generateBtn.addEventListener("click", () => {
 
 document.getElementById("printAllBtn").addEventListener("click", () => window.print());
 
-// ---- "Opret nyt forløb": rydder alle input, så man kan starte forfra ----
-document.getElementById("newForlobBtn").addEventListener("click", () => {
+// ---- Rydder alle input, så man kan starte et nyt forløb – bruges af flere knapper ----
+function nulstilAlt() {
   if (!confirm("Er du sikker? Dine nuværende input bliver ryddet, så du kan starte et nyt forløb.")) return;
   EpxState.clearAll();
   document.getElementById("fag").value = "Matematik";
@@ -322,10 +347,12 @@ document.getElementById("newForlobBtn").addEventListener("click", () => {
   genBadge.hidden = true;
   document.getElementById("printAllBtn").hidden = true;
   document.getElementById("newForlobBtn").hidden = true;
+  document.getElementById("draftBanner").hidden = true;
   stepItems.forEach((item) => item.classList.remove("done"));
   document.getElementById("saveModalOverlay").hidden = true;
   window.scrollTo({ top: 0, behavior: "smooth" });
   markProgress();
-  document.getElementById("erhvervTileSub").textContent = "Vælg et eller flere erhvervsområder";
-  document.getElementById("tile-erhverv").classList.remove("filled");
-});
+  renderAlleDineInputTiles();
+}
+
+document.getElementById("newForlobBtn").addEventListener("click", nulstilAlt);
