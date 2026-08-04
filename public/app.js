@@ -331,7 +331,7 @@ document.getElementById("printAllBtn").addEventListener("click", () => window.pr
 function nulstilAlt() {
   if (!confirm("Er du sikker? Dine nuværende input bliver ryddet, så du kan starte et nyt forløb.")) return;
   EpxState.clearAll();
-  document.getElementById("fag").value = "Matematik";
+  document.getElementById("fag").value = "";
   document.getElementById("fagAndet").value = "";
   document.getElementById("fagAndetWrap").hidden = true;
   document.getElementById("saerligeOensker").value = "";
