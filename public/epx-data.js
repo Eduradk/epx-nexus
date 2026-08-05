@@ -357,56 +357,79 @@ const FORSLAG_SEKTIONER = [
     id: "vejledning",
     ikon: "🧭",
     titel: "Vejledning og afklaring",
-    resume: "Forløbet indeholder refleksionsspørgsmål og møder med erhverv, der hjælper delvist afklarede elever med at koble deres interesse for byggeri til konkrete erhverv og videre uddannelsesveje.",
+    resume: "Forløbet indeholder tre konkrete refleksionsspørgsmål og et møde med erhverv, der hjælper delvist afklarede elever med at koble deres interesse for byggeri til konkrete erhverv og videre uddannelsesveje.",
     krop: [
-      "Eleverne arbejder undervejs i forløbet med korte refleksionsspørgsmål, der kobler det faglige indhold til deres egen afklaringsproces.",
-      "Efter byggeprojektet præsenteres eleverne for konkrete erhverv inden for det valgte hovedområde, så de kan spejle egne interesser i virkelige jobfunktioner.",
-      "Forløbet afsluttes med en kort samtale i grupper om, hvilke dele af arbejdet der føltes mest meningsfulde – og hvorfor."
+      "Eleverne arbejder undervejs i forløbet med tre korte refleksionsspørgsmål: \"Hvilken del af opgaven kunne du bedst lide at løse?\", \"Hvornår i forløbet følte du dig mest sikker?\" og \"Hvilket fag eller erhverv minder denne opgave dig om?\"",
+      "Efter projektet præsenteres eleverne for konkrete erhverv inden for det valgte hovedområde – gerne understøttet af et kort videoklip eller et virtuelt virksomhedsbesøg, hvis skolen har mulighed for det.",
+      "Forløbet afsluttes med en kort samtale i grupper om, hvilke dele af arbejdet der føltes mest meningsfulde – og hvorfor. Læreren noterer gerne elevernes svar til brug i den videre uddannelsesvejledning.",
+      "Se desuden den dedikerede afklaringsøvelse under \"Øvelser, cases og opgaver\", der går mere i dybden med elevens egne interesser og uddannelsesvalg."
     ]
   },
   {
     id: "laeringsmaal",
     ikon: "➕",
     titel: "Læringsmål",
-    resume: "Eleverne kan anvende matematik til at løse virkelighedsnære problemer inden for mål, beregninger og økonomi.",
+    resume: "Eleverne kan anvende matematik til at løse virkelighedsnære problemer inden for mål, beregninger og økonomi – og formidle løsningen fagligt.",
     krop: [
-      "Eleven kan opstille og løse praktiske beregninger af areal, volumen og vinkler.",
-      "Eleven kan omsætte et budget til konkrete materialevalg og vurdere konsekvenser af ændringer.",
-      "Eleven kan formidle en faglig løsning mundtligt for en ekstern modtager."
+      "Eleven kan opstille og løse praktiske beregninger af areal, volumen og vinkler ud fra en given plantegning.",
+      "Eleven kan omsætte et budget til konkrete materialevalg og vurdere de økonomiske konsekvenser af ændringer i valg af materialer.",
+      "Eleven kan formidle en faglig løsning mundtligt for en ekstern modtager, herunder begrunde valg af materialer og metode.",
+      "Eleven kan reflektere over sammenhængen mellem det faglige stof og en konkret erhvervspraksis."
+    ],
+    liste: [
+      "Alle beregninger er korrekte og dokumenteret med synlige mellemregninger",
+      "Prisoverslaget er realistisk og baseret på faktiske, opslåede priser",
+      "Præsentationen varer 3-5 minutter og inddrager mindst ét visuelt element (tegning, model eller graf)"
     ]
   },
   {
     id: "erhverv",
     ikon: "🏗️",
     titel: "Erhverv",
-    resume: "Tømrer, bygningskonstruktør, projektleder, murer m.fl.",
+    resume: "Tømrer, bygningskonstruktør, projektleder, murer m.fl. – med korte beskrivelser af, hvad de laver i praksis.",
     krop: [
-      "Tømrer – arbejder med konstruktion og opførelse af bygninger i træ.",
-      "Bygningskonstruktør – projekterer og planlægger byggeprojekter.",
-      "Projektleder (bygge og anlæg) – koordinerer tid, budget og fagfolk på en byggeplads.",
-      "Murer – opfører og renoverer bygningers murværk og facader."
+      "Forløbet peger mod fire erhverv, der alle arbejder med de samme grundlæggende matematiske beregninger som i projektet – blot i forskellig skala og med forskelligt ansvar.",
+      "Tømrer – arbejder med konstruktion og opførelse af bygninger i træ, herunder opmåling og tilpasning af materialer direkte på byggepladsen.",
+      "Bygningskonstruktør – projekterer og planlægger byggeprojekter, udarbejder tegninger og beregner materialebehov, før byggeriet går i gang.",
+      "Projektleder (bygge og anlæg) – koordinerer tid, budget og fagfolk på en byggeplads og har ansvar for, at projektet holder både tidsplan og økonomi.",
+      "Murer – opfører og renoverer bygningers murværk og facader og arbejder løbende med opmåling, vinkler og materialeforbrug."
     ]
   },
   {
-    id: "case",
+    id: "projekt",
     ikon: "📄",
-    titel: "Case",
-    resume: "Eleverne arbejder med et byggeprojekt og skal beregne materialeforbrug, areal, volumen, vinkler og pris.",
+    titel: "Projekt",
+    resume: "Eleverne arbejder med et konkret byggeprojekt – et udhus på 3 x 4 meter – og skal beregne materialeforbrug, areal, volumen, vinkler og pris i tre forskellige løsninger.",
     krop: [
-      "Eleverne får udleveret en plantegning for et mindre udhus og skal beregne det samlede materialeforbrug.",
-      "Eleverne udarbejder et prisoverslag ud fra aktuelle materialepriser og sammenligner tre forskellige løsninger.",
-      "Casen afsluttes med en kort præsentation af den løsning, gruppen vurderer bedst balancerer pris, holdbarhed og æstetik."
+      "Eleverne får udleveret en plantegning for et udhus på 3 x 4 meter med en taghældning på 15 grader og skal beregne det samlede materialeforbrug til vægge, tag og fundament.",
+      "Ud fra en prisliste med tømmer, isolering og tagmateriale udarbejder eleverne et prisoverslag og sammenligner tre forskellige materialeløsninger, fx trykimprægneret træ, ubehandlet træ og komposit.",
+      "Eleverne dokumenterer deres beregninger med tydelige mellemregninger, så metoden kan følges og efterprøves af andre grupper.",
+      "Projektet afsluttes med en 5-minutters gruppepræsentation af den løsning, gruppen vurderer bedst balancerer pris, holdbarhed og æstetik – med en kort begrundelse for fravalget af de to øvrige løsninger.",
+      "Se den tilhørende, klar-til-brug projektopgave under \"Øvelser, cases og opgaver\"."
+    ],
+    liste: [
+      "1. Beregn grundareal og rumfang ud fra plantegningen",
+      "2. Beregn tagareal ud fra den opgivne taghældning",
+      "3. Udarbejd materialeliste for hver af de tre løsninger",
+      "4. Lav et prisoverslag pr. løsning ud fra opslåede priser",
+      "5. Præsenter og begrund det endelige valg for klassen"
     ]
   },
   {
     id: "aktiviteter",
     ikon: "⚙️",
     titel: "Aktiviteter",
-    resume: "Analyse af plantegning, beregning af materialeforbrug, budget og tidsestimat.",
-    liste: ["Analyse af plantegning", "Beregning af materialeforbrug", "Budget og tidsestimat"],
+    resume: "Fordelt over forløbets lektioner: opmåling og analyse, beregning og budget, samt en afsluttende gruppepræsentation.",
+    liste: [
+      "Lektion 1: Analyse af plantegning og opmåling",
+      "Lektion 2-3: Beregning af materialeforbrug, areal og volumen",
+      "Lektion 4: Udarbejdelse af prisoverslag for tre løsninger",
+      "Lektion 5: Forberedelse og aflevering af gruppepræsentation"
+    ],
     krop: [
-      "Forløbet veksler mellem klasseundervisning, gruppearbejde og praktisk arbejde i værksted eller udendørs, hvor det er muligt.",
-      "Undervejs indgår korte oplæg fra læreren om centrale matematiske begreber, som eleverne straks omsætter i deres eget arbejde med casen."
+      "Forløbet veksler mellem klasseundervisning, gruppearbejde og praktisk arbejde i værksted eller udendørs, hvor det er muligt – fx ved at opmåle en reel bygning på skolens område.",
+      "Undervejs indgår korte oplæg fra læreren om centrale matematiske begreber (arealberegning, Pythagoras' læresætning, procentregning), som eleverne straks omsætter i deres eget arbejde med projektet.",
+      "Eleverne arbejder i faste grupper af 3-4 gennem hele forløbet, så de oplever en sammenhængende arbejdsproces frem mod den afsluttende præsentation."
     ]
   },
   {
@@ -434,21 +457,33 @@ const FORSLAG_SEKTIONER = [
     id: "evaluering",
     ikon: "✅",
     titel: "Evaluering",
-    resume: "Produkt, fremlæggelse og refleksion.",
+    resume: "Eleverne evalueres på tre delelementer: beregninger, mundtlig fremlæggelse og skriftlig refleksion – med løbende feedback undervejs.",
     krop: [
-      "Eleverne evalueres på deres skriftlige beregninger, den mundtlige fremlæggelse af løsningen samt en kort skriftlig refleksion over egen arbejdsproces.",
-      "Der gives løbende feedback undervejs i forløbet, så eleverne kan justere deres løsning inden den afsluttende fremlæggelse."
+      "Eleverne evalueres på tre delelementer: de skriftlige beregninger (er de korrekte og dokumenterede?), den mundtlige fremlæggelse (er løsningen begrundet fagligt og forståeligt?) og en kort skriftlig refleksion over egen arbejdsproces.",
+      "Der gives løbende feedback undervejs i forløbet – fx efter lektion 2-3 på de indledende beregninger – så eleverne kan justere deres løsning inden den afsluttende fremlæggelse.",
+      "Til den afsluttende evaluering kan læreren med fordel bruge en fælles feedback-skabelon med kriterierne nedenfor, så alle grupper vurderes ud fra samme standard."
+    ],
+    liste: [
+      "Korrekthed og dokumentation af beregninger",
+      "Fagligt begrundet mundtlig fremlæggelse",
+      "Realistisk og velovervejet prisoverslag",
+      "Skriftlig refleksion over egen arbejdsproces"
     ]
   },
   {
     id: "videre",
     ikon: "⭐",
     titel: "Videre muligheder",
-    resume: "Se relaterede erhvervsuddannelser og jobmuligheder.",
+    resume: "Besøg, gæstelærer og relaterede erhvervsuddannelser – samt konkrete henvisninger til supplerende materiale.",
     krop: [
-      "Forløbet kan udvides med et besøg på den lokale erhvervsskoles bygge- og anlægsafdeling.",
-      "Eleverne kan invitere en tømrer eller bygningskonstruktør ind som gæstelærer til en kort spørgerunde.",
-      "Relaterede erhvervsuddannelser: Tømrer, Snedker, Bygningsstruktør (EUX)."
+      "Forløbet kan udvides med et besøg på den lokale erhvervsskoles bygge- og anlægsafdeling, hvor eleverne kan se professionelle udføre lignende opgaver i praksis.",
+      "Eleverne kan invitere en tømrer eller bygningskonstruktør ind som gæstelærer til en kort spørgerunde om hverdagen i erhvervet.",
+      "Relaterede erhvervsuddannelser: Tømrer, Snedker, Bygningskonstruktør (EUX)."
+    ],
+    henvisninger: [
+      { titel: "Undervisningsforløb: Matematik i byggeprocesser", kilde: "Nationalt Center for Udvikling af Matematikundervisning", type: "PDF", ikon: "📄" },
+      { titel: "Tømreruddannelsen – adgangskrav og opbygning", kilde: "ug.dk", type: "Web", ikon: "🔗" },
+      { titel: "En dag som tømrerlærling", kilde: "ug.dk", type: "Video", ikon: "🎬" }
     ]
   }
 ];

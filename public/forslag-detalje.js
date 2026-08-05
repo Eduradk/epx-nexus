@@ -59,6 +59,26 @@ function renderKrop() {
     p.textContent = afsnit;
     detailBody.appendChild(p);
   });
+
+  if (sektion.henvisninger) {
+    const heading = document.createElement("h3");
+    heading.className = "henvisninger-heading";
+    heading.textContent = "Henvisninger";
+    detailBody.appendChild(heading);
+
+    const ul = document.createElement("ul");
+    ul.className = "henvisning-list";
+    sektion.henvisninger.forEach((h) => {
+      const li = document.createElement("li");
+      li.className = "henvisning-item";
+      li.innerHTML =
+        '<span class="henvisning-ikon">' + h.ikon + "</span>" +
+        '<div><div class="henvisning-titel">' + h.titel + "</div>" +
+        '<div class="henvisning-kilde">' + h.kilde + " · " + h.type + "</div></div>";
+      ul.appendChild(li);
+    });
+    detailBody.appendChild(ul);
+  }
 }
 
 function renderUdstyr() {
