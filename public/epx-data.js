@@ -84,6 +84,74 @@ const EpxAuth = {
   }
 };
 
+// Gemte forløb – pr. (demo-)bruger, i en SEPARAT nøgle, så "Ryd alle felter" aldrig sletter dem.
+// Ligger kun i denne browser, indtil der er en rigtig backend.
+const EpxForloeb = {
+  KEY: "epxNexusForloeb",
+  laes() {
+    try {
+      return JSON.parse(localStorage.getItem(EpxForloeb.KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  },
+  liste() {
+    const bruger = EpxAuth.getUser();
+    if (!bruger) return [];
+    return (EpxForloeb.laes()[bruger.navn] || []).slice().sort((a, b) => b.gemt - a.gemt);
+  },
+  hent(id) {
+    return EpxForloeb.liste().find((f) => f.id === id) || null;
+  },
+  // Gemmer en komplet kopi af kladden. Med id overskrives et eksisterende forløb. Returnerer id, eller null hvis det fejlede.
+  gem(titel, data, id) {
+    const bruger = EpxAuth.getUser();
+    if (!bruger) return null;
+    try {
+      const alle = EpxForloeb.laes();
+      const liste = alle[bruger.navn] || [];
+      const kopi = JSON.parse(JSON.stringify(data));
+      delete kopi.aabentForloebId;
+      delete kopi.forslagTitel;
+      const nu = Date.now();
+      let post = id ? liste.find((f) => f.id === id) : null;
+      if (post) {
+        post.titel = titel;
+        post.data = kopi;
+        post.gemt = nu;
+      } else {
+        post = { id: "f" + nu + Math.random().toString(36).slice(2, 6), titel: titel, data: kopi, gemt: nu };
+        liste.push(post);
+      }
+      alle[bruger.navn] = liste;
+      localStorage.setItem(EpxForloeb.KEY, JSON.stringify(alle));
+      return post.id;
+    } catch (e) {
+      return null;
+    }
+  },
+  slet(id) {
+    const bruger = EpxAuth.getUser();
+    if (!bruger) return;
+    const alle = EpxForloeb.laes();
+    alle[bruger.navn] = (alle[bruger.navn] || []).filter((f) => f.id !== id);
+    localStorage.setItem(EpxForloeb.KEY, JSON.stringify(alle));
+  }
+};
+
+// Foreslår et navn til et forløb ud fra fag, erhvervsområde og dato
+function foreslaaForloebTitel(data) {
+  const dele = [];
+  if (data.fag) dele.push(data.fag === "Andet fag" ? (data.fagAndet || "Andet fag") : data.fag);
+  const gren = data.erhverv && data.erhverv.hovedomraade
+    ? EPX_GRENE.find((g) => g.id === data.erhverv.hovedomraade)
+    : null;
+  if (gren) dele.push(gren.navn);
+  const d = new Date();
+  dele.push(d.getDate() + "/" + (d.getMonth() + 1));
+  return dele.join(" – ");
+}
+
 // Tegner login-status i topbaren (kaldes automatisk på alle sider, der indlæser epx-data.js)
 function renderTopbarAuth() {
   const area = document.getElementById("userArea");
@@ -100,6 +168,7 @@ function renderTopbarAuth() {
       if (confirm("Vil du logge ud?")) {
         EpxAuth.logout();
         renderTopbarAuth();
+        document.dispatchEvent(new Event("epx-auth-changed"));
       }
     });
     area.appendChild(chip);

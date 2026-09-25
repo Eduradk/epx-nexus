@@ -1,3 +1,14 @@
+// Print af et gemt forløb låner midlertidigt kladden. Lå der en sikkerhedskopi fra sidst (fx lukket fane midt i print),
+// lægges den tilbage, INDEN noget andet læser kladden.
+(function () {
+  const backup = localStorage.getItem("epxNexusPrintBackup");
+  if (backup !== null && new URLSearchParams(window.location.search).get("utskrift") !== "1") {
+    if (backup === "__none__") localStorage.removeItem("epxNexusData");
+    else localStorage.setItem("epxNexusData", backup);
+    localStorage.removeItem("epxNexusPrintBackup");
+  }
+})();
+
 const stepItems = document.querySelectorAll("#stepList li");
 const generateBtn = document.getElementById("generateBtn");
 const suggestionEmpty = document.getElementById("suggestionEmpty");
@@ -212,11 +223,39 @@ function harGemtUdkast() {
     }
 
     window.history.replaceState({}, "", window.location.pathname);
+  } else if (params.get("aabnet") === "1") {
+    // Et gemt forløb er lige åbnet fra "Gemte forløb" – ingen "ikke-afsluttet forløb"-banner
+    const d = EpxState.get();
+    const t = d.forslagTitel || "forløbet";
+    visToast(d.aabentForloebId
+      ? "✏️ \"" + t + "\" er åbnet – du ændrer i det gemte forløb. Tryk 💾 for at gemme ændringerne."
+      : "➕ Nyt forløb oprettet ud fra \"" + t.replace(/ \(kopi\)$/, "") + "\". Det gemte forløb er uændret. Tryk 💾 for at gemme det nye.");
+    window.history.replaceState({}, "", window.location.pathname);
+  } else if (params.get("utskrift") === "1") {
+    // Print af et gemt forløb: kladden er midlertidigt byttet ud – ryd op, når printdialogen lukkes
+    window.addEventListener("afterprint", () => { window.location.href = "index.html"; });
+    setTimeout(() => window.print(), 700);
   } else if (harGemtUdkast()) {
     // Intet lige gemt via en underside, men der findes et ældre, ikke-afsluttet udkast
     document.getElementById("draftBanner").hidden = false;
   }
 })();
+
+// Kort besked øverst i formularen (forsvinder af sig selv)
+function visToast(tekst) {
+  const banner = document.createElement("div");
+  banner.className = "toast-banner";
+  const span = document.createElement("span");
+  span.textContent = tekst;
+  banner.appendChild(span);
+  const luk = document.createElement("button");
+  luk.type = "button";
+  luk.textContent = "✕";
+  luk.addEventListener("click", () => banner.remove());
+  banner.appendChild(luk);
+  document.querySelector(".form-panel").prepend(banner);
+  setTimeout(() => banner.remove(), 10000);
+}
 
 document.getElementById("draftContinueBtn").addEventListener("click", () => {
   document.getElementById("draftBanner").hidden = true;
@@ -284,6 +323,7 @@ function showForslag(scrollTil) {
   suggestionEmpty.hidden = true;
   suggestionContent.hidden = false;
   genBadge.hidden = false;
+  document.getElementById("gemForloebBtn").hidden = false;
   document.getElementById("printAllBtn").hidden = false;
   document.getElementById("newForlobBtn").hidden = false;
   document.getElementById("printDate").textContent = new Date().toLocaleDateString("da-DK");
@@ -330,6 +370,11 @@ document.getElementById("printAllBtn").addEventListener("click", () => window.pr
 // ---- Rydder alle input, så man kan starte et nyt forløb – bruges af flere knapper ----
 function nulstilAlt() {
   if (!confirm("Er du sikker? Dine nuværende input bliver ryddet, så du kan starte et nyt forløb.")) return;
+  rydKladden();
+}
+
+// Selve nulstillingen (uden spørgsmål) – bruges også, når et forløb lige er gemt. Rører ALDRIG de gemte forløb.
+function rydKladden() {
   EpxState.clearAll();
   document.getElementById("fag").value = "";
   document.getElementById("fagAndet").value = "";
@@ -345,6 +390,7 @@ function nulstilAlt() {
   suggestionContent.hidden = true;
   suggestionEmpty.hidden = false;
   genBadge.hidden = true;
+  document.getElementById("gemForloebBtn").hidden = true;
   document.getElementById("printAllBtn").hidden = true;
   document.getElementById("newForlobBtn").hidden = true;
   document.getElementById("draftBanner").hidden = true;
@@ -356,3 +402,148 @@ function nulstilAlt() {
 }
 
 document.getElementById("newForlobBtn").addEventListener("click", nulstilAlt);
+
+// ---- Gem forløb + "Gemte forløb" ----
+const gemModal = document.getElementById("gemModalOverlay");
+const gemTitelInput = document.getElementById("gemTitel");
+const aabnModal = document.getElementById("aabnModalOverlay");
+let forloebDerSkalAabnes = null;
+
+function lukModal(el) { el.hidden = true; }
+[["gemModalClose", gemModal], ["aabnModalClose", aabnModal]].forEach(([id, modal]) => {
+  document.getElementById(id).addEventListener("click", () => lukModal(modal));
+  modal.addEventListener("click", (e) => { if (e.target === modal) lukModal(modal); });
+});
+
+// 💾 Kræver login (samme besked som før). Ellers spørges der efter et navn.
+document.getElementById("gemForloebBtn").addEventListener("click", () => {
+  if (!EpxAuth.isLoggedIn()) {
+    document.getElementById("saveModalOverlay").hidden = false;
+    return;
+  }
+  const data = EpxState.get();
+  const findes = data.aabentForloebId && EpxForloeb.hent(data.aabentForloebId);
+  gemTitelInput.value = data.forslagTitel || foreslaaForloebTitel(data);
+  document.getElementById("gemModalTekst").textContent = findes
+    ? "Du ændrer i et gemt forløb. Ændringerne overskriver den gemte udgave. Forsiden nulstilles bagefter."
+    : "Giv forløbet et navn, så du kan finde det igen. Forsiden nulstilles bagefter, så du kan starte et nyt forløb.";
+  gemModal.hidden = false;
+  gemTitelInput.focus();
+  gemTitelInput.select();
+});
+
+function gemNu() {
+  const data = EpxState.get();
+  const titel = gemTitelInput.value.trim() || foreslaaForloebTitel(data);
+  const id = EpxForloeb.gem(titel, data, data.aabentForloebId);
+  if (!id) {
+    alert("Forløbet kunne ikke gemmes – browserens lager er muligvis fuldt. Prøv at slette et gammelt forløb.");
+    return;
+  }
+  lukModal(gemModal);
+  rydKladden();
+  renderGemte();
+  visToast("✅ \"" + titel + "\" er gemt under \"Gemte forløb\".");
+}
+document.getElementById("gemBekraeftBtn").addEventListener("click", gemNu);
+gemTitelInput.addEventListener("keydown", (e) => { if (e.key === "Enter") gemNu(); });
+
+function datoTekst(ms) {
+  const d = new Date(ms);
+  return d.toLocaleDateString("da-DK") + " kl. " + d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+}
+
+function forloebResume(data) {
+  const dele = [];
+  if (data.fag) dele.push(data.fag === "Andet fag" ? (data.fagAndet || "Andet fag") : data.fag);
+  const gren = data.erhverv && data.erhverv.hovedomraade
+    ? EPX_GRENE.find((g) => g.id === data.erhverv.hovedomraade)
+    : null;
+  if (gren) dele.push(gren.navn);
+  return dele.join(" · ");
+}
+
+function renderGemte() {
+  const panel = document.getElementById("gemtePanel");
+  const ul = document.getElementById("gemteListe");
+  const liste = EpxForloeb.liste();
+  ul.innerHTML = "";
+  panel.hidden = liste.length === 0;
+  liste.forEach((f) => {
+    const li = document.createElement("li");
+    li.className = "gemt-item";
+
+    const titel = document.createElement("div");
+    titel.className = "gemt-titel";
+    titel.textContent = f.titel;
+    const meta = document.createElement("div");
+    meta.className = "gemt-meta";
+    const resume = forloebResume(f.data);
+    meta.textContent = "Gemt " + datoTekst(f.gemt) + (resume ? " · " + resume : "");
+
+    const knapper = document.createElement("div");
+    knapper.className = "gemt-knapper";
+    [
+      ["Åbn", "", () => bedOmAtAabne(f)],
+      ["🖨️ Print/PDF", "", () => printGemt(f)],
+      ["🗑️ Slet", " farlig", () => sletGemt(f)]
+    ].forEach(([tekst, ekstra, handler]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn-tool" + ekstra;
+      b.textContent = tekst;
+      b.addEventListener("click", handler);
+      knapper.appendChild(b);
+    });
+
+    li.appendChild(titel);
+    li.appendChild(meta);
+    li.appendChild(knapper);
+    ul.appendChild(li);
+  });
+}
+
+// Åbn: først et valg – ændr det gemte forløb, eller opret et nyt ud fra det
+function bedOmAtAabne(f) {
+  forloebDerSkalAabnes = f;
+  let tekst = "\"" + f.titel + "\" er gemt. Vil du ændre i det gemte forløb, eller skal der oprettes et nyt forløb ud fra det, så det gemte forbliver uændret?";
+  if (harGemtUdkast()) {
+    tekst += " Bemærk: Dit nuværende, ikke-gemte forløb på forsiden bliver erstattet.";
+  }
+  document.getElementById("aabnModalTekst").textContent = tekst;
+  aabnModal.hidden = false;
+}
+
+function aabnForloeb(aendrDetGemte) {
+  const f = forloebDerSkalAabnes;
+  if (!f) return;
+  const data = JSON.parse(JSON.stringify(f.data));
+  if (aendrDetGemte) {
+    data.aabentForloebId = f.id;
+    data.forslagTitel = f.titel;
+  } else {
+    delete data.aabentForloebId;
+    data.forslagTitel = f.titel + " (kopi)";
+  }
+  localStorage.setItem("epxNexusData", JSON.stringify(data));
+  window.location.href = "index.html?aabnet=1";
+}
+document.getElementById("aabnAendrBtn").addEventListener("click", () => aabnForloeb(true));
+document.getElementById("aabnNytBtn").addEventListener("click", () => aabnForloeb(false));
+
+// Print/PDF af et gemt forløb: kladden byttes midlertidigt ud, og en sikkerhedskopi lægges tilbage bagefter
+function printGemt(f) {
+  const raw = localStorage.getItem("epxNexusData");
+  localStorage.setItem("epxNexusPrintBackup", raw === null ? "__none__" : raw);
+  localStorage.setItem("epxNexusData", JSON.stringify(f.data));
+  window.location.href = "index.html?utskrift=1";
+}
+
+function sletGemt(f) {
+  if (!confirm("Slet \"" + f.titel + "\" for altid? Det kan ikke fortrydes.")) return;
+  EpxForloeb.slet(f.id);
+  renderGemte();
+}
+
+renderGemte();
+document.addEventListener("epx-auth-changed", renderGemte);

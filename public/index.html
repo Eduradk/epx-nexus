@@ -196,7 +196,8 @@
     <button id="generateBtn" class="btn-primary" type="button">✨ Generér forslag</button>
   </section>
 
-  <!-- Højre: forslag -->
+  <!-- Højre: forslag + gemte forløb -->
+  <div class="right-col">
   <aside class="suggestion-panel">
     <div class="print-letterhead" aria-hidden="true">
       <div class="print-logo">EPX <span>NEXUS</span></div>
@@ -207,6 +208,7 @@
       <h2>Dit forslag</h2>
       <div class="suggestion-header-right">
         <span class="badge-generated" id="genBadge" hidden>Genereret forslag</span>
+        <button class="btn-icon-print" id="gemForloebBtn" type="button" hidden title="Gem forløb">💾</button>
         <button class="btn-icon-print" id="printAllBtn" type="button" hidden title="Print/download hele forslaget">🖨️</button>
         <button class="btn-icon-print" id="newForlobBtn" type="button" hidden title="Opret nyt forløb">➕</button>
       </div>
@@ -230,6 +232,12 @@
     </div>
   </aside>
 
+  <section class="gemte-panel" id="gemtePanel" hidden>
+    <h2>Gemte forløb</h2>
+    <ul class="gemte-liste" id="gemteListe"></ul>
+  </section>
+  </div>
+
 </div>
 
 <!-- Modal: info om at forslaget ikke gemmes automatisk uden login -->
@@ -240,6 +248,33 @@
     <p>Forslaget bliver <strong>ikke</strong> gemt automatisk og forsvinder, hvis du lukker siden. Log ind eller opret en bruger for at gemme dine forløb permanent – eller husk at downloade forslaget som PDF, inden du lukker siden, hvis du ikke logger ind.</p>
     <div class="modal-actions">
       <a href="opret-bruger.html" class="btn-primary" id="modalCreateUserBtn">👤 Log ind / opret bruger</a>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: gem forløb (navn) -->
+<div class="modal-overlay" id="gemModalOverlay" hidden>
+  <div class="modal-box">
+    <button class="modal-close" id="gemModalClose" type="button" aria-label="Luk">✕</button>
+    <h3>Gem forløb</h3>
+    <p id="gemModalTekst">Giv forløbet et navn, så du kan finde det igen. Forsiden nulstilles bagefter, så du kan starte et nyt forløb.</p>
+    <label for="gemTitel">Navn på forløbet</label>
+    <input type="text" id="gemTitel" maxlength="80" />
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-primary" id="gemBekraeftBtn" type="button">💾 Gem forløb</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: åbn gemt forløb – ændr det eller opret et nyt -->
+<div class="modal-overlay" id="aabnModalOverlay" hidden>
+  <div class="modal-box">
+    <button class="modal-close" id="aabnModalClose" type="button" aria-label="Luk">✕</button>
+    <h3>Du er ved at åbne et gemt forløb</h3>
+    <p id="aabnModalTekst"></p>
+    <div class="modal-actions">
+      <button class="btn-primary" id="aabnAendrBtn" type="button">✏️ Ændr det gemte forløb</button>
+      <button class="btn-secondary" id="aabnNytBtn" type="button">➕ Opret et nyt forløb i stedet</button>
     </div>
   </div>
 </div>
