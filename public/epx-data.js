@@ -347,212 +347,79 @@ function samlBrugerValg() {
   return dele;
 }
 
-// Genererer (dummy) konkrete øvelser, cases og opgaver – samt evt. en afklaringsøvelse – ud fra brugerens faktiske input
-function genererMaterialer() {
-  const data = EpxState.get();
-  const valgListe = samlBrugerValg();
-  const baseretPaa = valgListe.length
-    ? valgListe.join(" · ")
-    : "ingen valg fra \"Dine input\" endnu – udfyld dem for et mere målrettet materiale";
 
-  const fag = data.fag === "Andet fag" ? (data.fagAndet || "faget") : (data.fag || "faget");
-  const gren = data.erhverv && data.erhverv.hovedomraade
-    ? EPX_GRENE.find((g) => g.id === data.erhverv.hovedomraade)
-    : null;
-  const erhvervNote = (data.erhverv && data.erhverv.specifikke && data.erhverv.specifikke[0])
-    || (gren ? gren.navn : "praksis");
-  const tidsramme = (data.formaal && data.formaal.tidsrammeValg) || "1-2 lektioner";
+// Afsnittene i "Dit forslag". Indholdet skrives af AI'en ud fra lærerens input (se api/generer.js)
+const FORSLAG_SEKTIONER = [
+  { id: "vejledning", ikon: "🧭", titel: "Vejledning og afklaring" },
+  { id: "laeringsmaal", ikon: "➕", titel: "Læringsmål" },
+  { id: "erhverv", ikon: "💼", titel: "Erhverv" },
+  { id: "projekt", ikon: "📄", titel: "Projekt" },
+  { id: "aktiviteter", ikon: "⚙️", titel: "Aktiviteter" },
+  { id: "materialer", ikon: "📚", titel: "Øvelser, cases og opgaver", dynamisk: true },
+  { id: "udstyr", ikon: "🧰", titel: "Udstyr og materialer" },
+  { id: "evaluering", ikon: "✅", titel: "Evaluering" },
+  { id: "videre", ikon: "⭐", titel: "Videre muligheder" }
+];
 
-  const materialer = [
-    {
-      id: "oevelse",
-      type: "Øvelse",
-      ikon: "✏️",
-      titel: fag + "-øvelse: Fra tal til virkelighed",
-      krop: [
-        "Eleverne løser en række korte opgaver, der tager konkret afsæt i " + erhvervNote.toLowerCase() + ".",
-        "Opgaverne stiger gradvist i sværhedsgrad og afsluttes med, at eleverne selv formulerer en lignende opgave til en klassekammerat.",
-        data.saerligeOensker ? "Øvelsen er tilpasset dit ønske om: \"" + data.saerligeOensker + "\"." : null
-      ].filter(Boolean),
-      baseretPaa: baseretPaa
-    },
-    {
-      id: "case",
-      type: "Case",
-      ikon: "📄",
-      titel: "Case: " + erhvervNote,
-      krop: [
-        "Eleverne arbejder i grupper med en virkelighedsnær problemstilling fra " + erhvervNote.toLowerCase() + ".",
-        "Casen indeholder baggrundsmateriale, konkrete data og en klar leverance, som grupperne skal præsentere for klassen.",
-        "Estimeret tidsforbrug: " + tidsramme + "."
-      ],
-      baseretPaa: baseretPaa
-    },
-    {
-      id: "opgave",
-      type: "Opgave",
-      ikon: "📝",
-      titel: "Individuel opgave: Anvend din viden",
-      krop: [
-        "En kort, individuel opgave, eleverne kan løse selvstændigt til evaluering af deres forståelse.",
-        "Opgaven afsluttes med et refleksionsspørgsmål, der kobler tilbage til fagets anvendelse i praksis."
-      ],
-      baseretPaa: baseretPaa
-    }
-  ];
+const MATERIALE_IKONER = { "Øvelse": "✏️", "Case": "📄", "Opgave": "📝", "Afklaringsøvelse": "🧭" };
+const HENVISNING_IKONER = { PDF: "📄", Web: "🔗", Video: "🎬" };
 
-  if (!data.afklaringSkipped && data.afklaringsgrad) {
-    const fokusListe = data.afklaringsfokus || [];
-    materialer.push({
-      id: "afklaring",
-      type: "Afklaringsøvelse",
-      ikon: "🧭",
-      titel: "Afklaringsøvelse: Din vej videre",
-      krop: [
-        "En særskilt øvelse, der understøtter elevens afklaring om studievalg, målrettet elever, der er " + data.afklaringsgrad.split(" – ")[0].toLowerCase() + ".",
-        fokusListe.length ? "Øvelsen har fokus på: " + fokusListe.join(", ") + "." : null,
-        "Eleverne reflekterer skriftligt og mundtligt over sammenhængen mellem dagens faglige indhold og deres egne interesser og fremtidige uddannelsesvalg."
-      ].filter(Boolean),
-      baseretPaa: baseretPaa + " · Afklaringsgrad: " + data.afklaringsgrad + (fokusListe.length ? " · Fokus: " + fokusListe.join(", ") : "")
-    });
-  }
-
-  return materialer;
+// Det genererede forslag (eller null, hvis der endnu ikke er genereret et)
+function hentForslag() {
+  const f = EpxState.get().forslag;
+  return f && f.sektioner ? f : null;
 }
 
-// Det (dummy) genererede forslag – delt mellem forsiden (resuméer) og detaljesiden (fuldt indhold)
-const FORSLAG_SEKTIONER = [
-  {
-    id: "vejledning",
-    ikon: "🧭",
-    titel: "Vejledning og afklaring",
-    resume: "Forløbet indeholder tre konkrete refleksionsspørgsmål og et møde med erhverv, der hjælper delvist afklarede elever med at koble deres interesse for byggeri til konkrete erhverv og videre uddannelsesveje.",
-    krop: [
-      "Eleverne arbejder undervejs i forløbet med tre korte refleksionsspørgsmål: \"Hvilken del af opgaven kunne du bedst lide at løse?\", \"Hvornår i forløbet følte du dig mest sikker?\" og \"Hvilket fag eller erhverv minder denne opgave dig om?\"",
-      "Efter projektet præsenteres eleverne for konkrete erhverv inden for det valgte hovedområde – gerne understøttet af et kort videoklip eller et virtuelt virksomhedsbesøg, hvis skolen har mulighed for det.",
-      "Forløbet afsluttes med en kort samtale i grupper om, hvilke dele af arbejdet der føltes mest meningsfulde – og hvorfor. Læreren noterer gerne elevernes svar til brug i den videre uddannelsesvejledning.",
-      "Se desuden den dedikerede afklaringsøvelse under \"Øvelser, cases og opgaver\", der går mere i dybden med elevens egne interesser og uddannelsesvalg."
-    ]
-  },
-  {
-    id: "laeringsmaal",
-    ikon: "➕",
-    titel: "Læringsmål",
-    resume: "Eleverne kan anvende matematik til at løse virkelighedsnære problemer inden for mål, beregninger og økonomi – og formidle løsningen fagligt.",
-    krop: [
-      "Eleven kan opstille og løse praktiske beregninger af areal, volumen og vinkler ud fra en given plantegning.",
-      "Eleven kan omsætte et budget til konkrete materialevalg og vurdere de økonomiske konsekvenser af ændringer i valg af materialer.",
-      "Eleven kan formidle en faglig løsning mundtligt for en ekstern modtager, herunder begrunde valg af materialer og metode.",
-      "Eleven kan reflektere over sammenhængen mellem det faglige stof og en konkret erhvervspraksis."
-    ],
-    liste: [
-      "Alle beregninger er korrekte og dokumenteret med synlige mellemregninger",
-      "Prisoverslaget er realistisk og baseret på faktiske, opslåede priser",
-      "Præsentationen varer 3-5 minutter og inddrager mindst ét visuelt element (tegning, model eller graf)"
-    ]
-  },
-  {
-    id: "erhverv",
-    ikon: "🏗️",
-    titel: "Erhverv",
-    resume: "Tømrer, bygningskonstruktør, projektleder, murer m.fl. – med korte beskrivelser af, hvad de laver i praksis.",
-    krop: [
-      "Forløbet peger mod fire erhverv, der alle arbejder med de samme grundlæggende matematiske beregninger som i projektet – blot i forskellig skala og med forskelligt ansvar.",
-      "Tømrer – arbejder med konstruktion og opførelse af bygninger i træ, herunder opmåling og tilpasning af materialer direkte på byggepladsen.",
-      "Bygningskonstruktør – projekterer og planlægger byggeprojekter, udarbejder tegninger og beregner materialebehov, før byggeriet går i gang.",
-      "Projektleder (bygge og anlæg) – koordinerer tid, budget og fagfolk på en byggeplads og har ansvar for, at projektet holder både tidsplan og økonomi.",
-      "Murer – opfører og renoverer bygningers murværk og facader og arbejder løbende med opmåling, vinkler og materialeforbrug."
-    ]
-  },
-  {
-    id: "projekt",
-    ikon: "📄",
-    titel: "Projekt",
-    resume: "Eleverne arbejder med et konkret byggeprojekt – et udhus på 3 x 4 meter – og skal beregne materialeforbrug, areal, volumen, vinkler og pris i tre forskellige løsninger.",
-    krop: [
-      "Eleverne får udleveret en plantegning for et udhus på 3 x 4 meter med en taghældning på 15 grader og skal beregne det samlede materialeforbrug til vægge, tag og fundament.",
-      "Ud fra en prisliste med tømmer, isolering og tagmateriale udarbejder eleverne et prisoverslag og sammenligner tre forskellige materialeløsninger, fx trykimprægneret træ, ubehandlet træ og komposit.",
-      "Eleverne dokumenterer deres beregninger med tydelige mellemregninger, så metoden kan følges og efterprøves af andre grupper.",
-      "Projektet afsluttes med en 5-minutters gruppepræsentation af den løsning, gruppen vurderer bedst balancerer pris, holdbarhed og æstetik – med en kort begrundelse for fravalget af de to øvrige løsninger.",
-      "Se den tilhørende, klar-til-brug projektopgave under \"Øvelser, cases og opgaver\"."
-    ],
-    liste: [
-      "1. Beregn grundareal og rumfang ud fra plantegningen",
-      "2. Beregn tagareal ud fra den opgivne taghældning",
-      "3. Udarbejd materialeliste for hver af de tre løsninger",
-      "4. Lav et prisoverslag pr. løsning ud fra opslåede priser",
-      "5. Præsenter og begrund det endelige valg for klassen"
-    ]
-  },
-  {
-    id: "aktiviteter",
-    ikon: "⚙️",
-    titel: "Aktiviteter",
-    resume: "Fordelt over forløbets lektioner: opmåling og analyse, beregning og budget, samt en afsluttende gruppepræsentation.",
-    liste: [
-      "Lektion 1: Analyse af plantegning og opmåling",
-      "Lektion 2-3: Beregning af materialeforbrug, areal og volumen",
-      "Lektion 4: Udarbejdelse af prisoverslag for tre løsninger",
-      "Lektion 5: Forberedelse og aflevering af gruppepræsentation"
-    ],
-    krop: [
-      "Forløbet veksler mellem klasseundervisning, gruppearbejde og praktisk arbejde i værksted eller udendørs, hvor det er muligt – fx ved at opmåle en reel bygning på skolens område.",
-      "Undervejs indgår korte oplæg fra læreren om centrale matematiske begreber (arealberegning, Pythagoras' læresætning, procentregning), som eleverne straks omsætter i deres eget arbejde med projektet.",
-      "Eleverne arbejder i faste grupper af 3-4 gennem hele forløbet, så de oplever en sammenhængende arbejdsproces frem mod den afsluttende præsentation."
-    ]
-  },
-  {
-    id: "materialer",
-    ikon: "📚",
-    titel: "Øvelser, cases og opgaver",
-    dynamisk: true
-  },
-  {
-    id: "udstyr",
-    ikon: "🧰",
-    titel: "Udstyr og materialer",
-    resume: "7 varer – kan bruges som bestillingsliste til de aktiviteter, der kræver særligt udstyr.",
-    udstyr: [
-      { navn: "Målebånd", antal: "1 pr. gruppe", kategori: "Værktøj" },
-      { navn: "Vinkelmåler / tømrervinkel", antal: "1 pr. gruppe", kategori: "Værktøj" },
-      { navn: "Lommeregner eller adgang til regneark", antal: "1 pr. elev", kategori: "Udstyr" },
-      { navn: "Karton eller balsatræ til model", antal: "2 plader pr. gruppe", kategori: "Materiale" },
-      { navn: "Limpistol", antal: "1 pr. gruppe", kategori: "Værktøj" },
-      { navn: "Beskyttelsesbriller", antal: "1 pr. elev", kategori: "Sikkerhedsudstyr" },
-      { navn: "Plantegning (print)", antal: "1 pr. elev", kategori: "Materiale" }
-    ]
-  },
-  {
-    id: "evaluering",
-    ikon: "✅",
-    titel: "Evaluering",
-    resume: "Eleverne evalueres på tre delelementer: beregninger, mundtlig fremlæggelse og skriftlig refleksion – med løbende feedback undervejs.",
-    krop: [
-      "Eleverne evalueres på tre delelementer: de skriftlige beregninger (er de korrekte og dokumenterede?), den mundtlige fremlæggelse (er løsningen begrundet fagligt og forståeligt?) og en kort skriftlig refleksion over egen arbejdsproces.",
-      "Der gives løbende feedback undervejs i forløbet – fx efter lektion 2-3 på de indledende beregninger – så eleverne kan justere deres løsning inden den afsluttende fremlæggelse.",
-      "Til den afsluttende evaluering kan læreren med fordel bruge en fælles feedback-skabelon med kriterierne nedenfor, så alle grupper vurderes ud fra samme standard."
-    ],
-    liste: [
-      "Korrekthed og dokumentation af beregninger",
-      "Fagligt begrundet mundtlig fremlæggelse",
-      "Realistisk og velovervejet prisoverslag",
-      "Skriftlig refleksion over egen arbejdsproces"
-    ]
-  },
-  {
-    id: "videre",
-    ikon: "⭐",
-    titel: "Videre muligheder",
-    resume: "Besøg, gæstelærer og relaterede erhvervsuddannelser – samt konkrete henvisninger til supplerende materiale.",
-    krop: [
-      "Forløbet kan udvides med et besøg på den lokale erhvervsskoles bygge- og anlægsafdeling, hvor eleverne kan se professionelle udføre lignende opgaver i praksis.",
-      "Eleverne kan invitere en tømrer eller bygningskonstruktør ind som gæstelærer til en kort spørgerunde om hverdagen i erhvervet.",
-      "Relaterede erhvervsuddannelser: Tømrer, Snedker, Bygningskonstruktør (EUX)."
-    ],
-    henvisninger: [
-      { titel: "Undervisningsforløb: Matematik i byggeprocesser", kilde: "Nationalt Center for Udvikling af Matematikundervisning", type: "PDF", ikon: "📄" },
-      { titel: "Tømreruddannelsen – adgangskrav og opbygning", kilde: "ug.dk", type: "Web", ikon: "🔗" },
-      { titel: "En dag som tømrerlærling", kilde: "ug.dk", type: "Video", ikon: "🎬" }
-    ]
-  }
-];
+// Afsnittene flettet sammen med det genererede indhold – bruges af forsiden og detaljesiden
+function hentForslagSektioner() {
+  const forslag = hentForslag();
+  if (!forslag) return [];
+  return FORSLAG_SEKTIONER.map((s) => {
+    const indhold = forslag.sektioner[s.id] || {};
+    const sektion = Object.assign({}, s, indhold);
+    if (sektion.henvisninger) {
+      sektion.henvisninger = sektion.henvisninger.map((h) => Object.assign({ ikon: HENVISNING_IKONER[h.type] || "🔗" }, h));
+    }
+    return sektion;
+  });
+}
+
+// Øvelser, cases og opgaver fra det genererede forslag
+function genererMaterialer() {
+  const forslag = hentForslag();
+  if (!forslag) return [];
+  const valgListe = samlBrugerValg();
+  const baseretPaa = valgListe.length ? valgListe.join(" · ") : "ingen valg fra \"Dine input\"";
+  return (forslag.materialer || []).map((m, i) => ({
+    id: m.type === "Afklaringsøvelse" ? "afklaring" : "materiale" + i,
+    type: m.type,
+    ikon: MATERIALE_IKONER[m.type] || "📝",
+    titel: m.titel,
+    krop: m.krop || [],
+    baseretPaa: baseretPaa
+  }));
+}
+
+// Samler ALLE lærerens input til AI'en – med læsbare navne i stedet for interne id'er
+function samlInputTilAI() {
+  const d = EpxState.get();
+  const gren = d.erhverv && d.erhverv.hovedomraade ? EPX_GRENE.find((g) => g.id === d.erhverv.hovedomraade) : null;
+  return {
+    fag: d.fag === "Andet fag" ? d.fagAndet : d.fag,
+    erhverv: {
+      omraade: gren ? gren.navn : "",
+      omraadeBeskrivelse: gren ? gren.beskrivelse : "",
+      specifikke: (d.erhverv && d.erhverv.specifikke) || [],
+      fritekst: (d.erhverv && d.erhverv.fritekst) || ""
+    },
+    lokaler: d.lokaler || null,
+    paedagogisk: d.paedagogisk || null,
+    didaktisk: d.didaktisk || null,
+    formaal: d.formaal || null,
+    forudsaetninger: d.forudsaetninger || null,
+    afklaringSkipped: !!d.afklaringSkipped,
+    afklaringsgrad: d.afklaringsgrad || "",
+    afklaringsfokus: d.afklaringsfokus || [],
+    saerligeOensker: d.saerligeOensker || ""
+  };
+}

@@ -1,6 +1,6 @@
 const params = new URLSearchParams(window.location.search);
 const sektionId = params.get("sektion");
-const sektion = FORSLAG_SEKTIONER.find((s) => s.id === sektionId);
+const sektion = hentForslagSektioner().find((s) => s.id === sektionId);
 
 const sektionTitelEl = document.getElementById("sektionTitel");
 const detailBody = document.getElementById("detailBody");
@@ -71,10 +71,11 @@ function renderKrop() {
     sektion.henvisninger.forEach((h) => {
       const li = document.createElement("li");
       li.className = "henvisning-item";
-      li.innerHTML =
-        '<span class="henvisning-ikon">' + h.ikon + "</span>" +
-        '<div><div class="henvisning-titel">' + h.titel + "</div>" +
-        '<div class="henvisning-kilde">' + h.kilde + " · " + h.type + "</div></div>";
+      // AI-tekst indsættes som tekst (ikke HTML)
+      li.innerHTML = '<span class="henvisning-ikon"></span><div><div class="henvisning-titel"></div><div class="henvisning-kilde"></div></div>';
+      li.querySelector(".henvisning-ikon").textContent = h.ikon;
+      li.querySelector(".henvisning-titel").textContent = h.titel;
+      li.querySelector(".henvisning-kilde").textContent = h.kilde + " · " + h.type;
       ul.appendChild(li);
     });
     detailBody.appendChild(ul);

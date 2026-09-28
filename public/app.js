@@ -13,6 +13,7 @@ const stepItems = document.querySelectorAll("#stepList li");
 const generateBtn = document.getElementById("generateBtn");
 const suggestionEmpty = document.getElementById("suggestionEmpty");
 const suggestionContent = document.getElementById("suggestionContent");
+const suggestionEmptyHTML = suggestionEmpty.innerHTML;
 const genBadge = document.getElementById("genBadge");
 const saerligeOensker = document.getElementById("saerligeOensker");
 const charCount = document.getElementById("charCount");
@@ -279,8 +280,9 @@ function renderForslag() {
   const heroTitle = document.getElementById("heroTitle");
   const heroSubtitle = document.getElementById("heroSubtitle");
 
-  heroTitle.textContent = "Beregninger i praksis";
-  heroSubtitle.textContent = "Matematik brugt i byggeprocesser";
+  const forslag = hentForslag();
+  heroTitle.textContent = forslag.titel;
+  heroSubtitle.textContent = forslag.undertitel;
 
   if (gren && GREN_BILLEDER[gren.id]) {
     heroCard.classList.remove("no-image");
@@ -297,7 +299,7 @@ function renderForslag() {
 
   const list = document.getElementById("suggestionSections");
   list.innerHTML = "";
-  FORSLAG_SEKTIONER.forEach((sektion) => {
+  hentForslagSektioner().forEach((sektion) => {
     const li = document.createElement("li");
     const a = document.createElement("a");
     a.className = "section-link";
@@ -309,9 +311,9 @@ function renderForslag() {
       const materialer = genererMaterialer();
       resume = materialer.length + " AI-genererede materialer klar til brug" + (materialer.some((m) => m.id === "afklaring") ? ", inkl. en afklaringsøvelse" : "") + ".";
     }
-    a.innerHTML =
-      '<div class="section-title">' + sektion.ikon + " " + sektion.titel + '<span class="tile-chev">›</span></div>' +
-      "<p>" + resume + "</p>";
+    // AI-tekst indsættes som tekst (ikke HTML)
+    a.innerHTML = '<div class="section-title">' + sektion.ikon + " " + sektion.titel + '<span class="tile-chev">›</span></div><p></p>';
+    a.querySelector("p").textContent = resume || "";
     li.appendChild(a);
     list.appendChild(li);
   });
@@ -338,13 +340,57 @@ function showForslag(scrollTil) {
 }
 
 // Genindlæs et allerede genereret forslag, hvis man navigerer tilbage til forsiden
-if (EpxState.get().forslagGenereret) {
+if (hentForslag()) {
   showForslag(false);
 }
 
-// "Generér forslag" viser det (dummy) forslag
-generateBtn.addEventListener("click", () => {
+function visGenereringsStatus(tekst, erFejl) {
+  suggestionContent.hidden = true;
+  suggestionEmpty.hidden = false;
+  suggestionEmpty.innerHTML = "";
+  const p = document.createElement("p");
+  p.textContent = tekst;
+  if (erFejl) p.style.color = "#b42318";
+  suggestionEmpty.appendChild(p);
+}
+
+// "Generér forslag" sender ALLE input til AI'en og viser det forslag, der kommer tilbage
+generateBtn.addEventListener("click", async () => {
+  const knapTekst = generateBtn.textContent;
+  generateBtn.disabled = true;
+  generateBtn.textContent = "⏳ Genererer forslag …";
+  visGenereringsStatus("⏳ AI'en skriver dit forslag ud fra alle dine input. Det tager typisk 30-90 sekunder …");
+  suggestionEmpty.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  let svar;
+  try {
+    const res = await fetch("/api/generer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: samlInputTilAI() })
+    });
+    svar = await res.json().catch(() => ({ fejl: "Serveren svarede ikke som forventet (" + res.status + ")." }));
+    if (!res.ok && !svar.fejl) svar.fejl = "Serveren svarede med fejl " + res.status + ".";
+  } catch (e) {
+    svar = { fejl: "Kunne ikke få forbindelse til serveren. Tjek din internetforbindelse, og prøv igen." };
+  } finally {
+    generateBtn.disabled = false;
+    generateBtn.textContent = knapTekst;
+  }
+
+  if (!svar.forslag) {
+    // Et tidligere forslag bevares, hvis der var et
+    if (hentForslag()) showForslag(false);
+    else visGenereringsStatus("⚠️ " + svar.fejl, true);
+    if (hentForslag()) visToast("⚠️ " + svar.fejl + " Dit tidligere forslag er bevaret.");
+    return;
+  }
+
+  // Nyt forslag: tidligere manuelle rettelser og afkrydsninger hører til det gamle forslag
+  EpxState.set("forslag", svar.forslag);
   EpxState.set("forslagGenereret", true);
+  EpxState.clearKey("forslagOverrides");
+  EpxState.clearKey("udstyrChecked");
   showForslag(true);
 
   // Info om manglende login vises kun første gang, man genererer et forslag for dette forløb – og slet ikke hvis man er logget ind
@@ -388,6 +434,7 @@ function rydKladden() {
   afklaringSkipBtn.classList.remove("active");
   afklaringSkipBtn.textContent = "Ikke relevant";
   suggestionContent.hidden = true;
+  suggestionEmpty.innerHTML = suggestionEmptyHTML;
   suggestionEmpty.hidden = false;
   genBadge.hidden = true;
   document.getElementById("gemForloebBtn").hidden = true;
