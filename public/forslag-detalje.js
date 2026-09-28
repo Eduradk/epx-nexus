@@ -1,24 +1,12 @@
 const params = new URLSearchParams(window.location.search);
 const sektionId = params.get("sektion");
-const sektion = hentForslagSektioner().find((s) => s.id === sektionId);
+let sektion = hentForslagSektioner().find((s) => s.id === sektionId);
 
 const sektionTitelEl = document.getElementById("sektionTitel");
 const detailBody = document.getElementById("detailBody");
 const detailToolbar = document.getElementById("detailToolbar");
 const aiBadgeHolder = document.getElementById("aiBadgeHolder");
 document.getElementById("printDate").textContent = new Date().toLocaleDateString("da-DK");
-
-function getOverride() {
-  const overrides = EpxState.get().forslagOverrides || {};
-  return overrides[sektionId] || null;
-}
-
-function saveOverride(patch) {
-  const data = EpxState.get();
-  const overrides = data.forslagOverrides || {};
-  overrides[sektionId] = Object.assign({}, overrides[sektionId], patch);
-  EpxState.set("forslagOverrides", overrides);
-}
 
 function getUdstyrChecked() {
   return EpxState.get().udstyrChecked || {};
@@ -31,18 +19,10 @@ function setUdstyrChecked(navn, checked) {
 }
 
 function renderKrop() {
-  const override = getOverride();
-  const krop = (override && override.krop) || sektion.krop || [];
+  const krop = sektion.krop || [];
 
   detailBody.innerHTML = "";
   aiBadgeHolder.innerHTML = "";
-
-  if (override && override.aiJustering) {
-    const badge = document.createElement("span");
-    badge.className = "ai-badge";
-    badge.textContent = "✨ AI-justeret";
-    aiBadgeHolder.appendChild(badge);
-  }
 
   if (sektion.liste) {
     const ul = document.createElement("ul");
@@ -209,7 +189,6 @@ function render() {
     renderUdstyr();
   } else if (sektion.id === "materialer") {
     document.getElementById("editToggleBtn").hidden = true;
-    document.getElementById("aiToggleBtn").hidden = true;
     renderMaterialer();
   } else {
     renderKrop();
@@ -220,74 +199,115 @@ render();
 // ---- Print ----
 document.getElementById("printBtn").addEventListener("click", () => window.print());
 
-// ---- AI-justering (mock) ----
+// ---- Justering: én ændring (AI eller manuel) tilpasser HELE forslaget, så alle afsnit passer sammen ----
 const aiToggleBtn = document.getElementById("aiToggleBtn");
 const aiAssist = document.getElementById("aiAssist");
 const aiGenerateBtn = document.getElementById("aiGenerateBtn");
 const aiInstruction = document.getElementById("aiInstruction");
-
-if (aiToggleBtn) {
-  aiToggleBtn.addEventListener("click", () => {
-    aiAssist.hidden = !aiAssist.hidden;
-    aiToggleBtn.classList.toggle("active", !aiAssist.hidden);
-    document.getElementById("editArea").hidden = true;
-    document.getElementById("editToggleBtn").classList.remove("active");
-  });
-
-  aiGenerateBtn.addEventListener("click", () => {
-    const instruktion = aiInstruction.value.trim();
-    if (!instruktion) {
-      aiInstruction.focus();
-      return;
-    }
-    aiGenerateBtn.disabled = true;
-    aiGenerateBtn.textContent = "Genererer …";
-    setTimeout(() => {
-      const override = getOverride();
-      const nuvaerendeKrop = (override && override.krop) || sektion.krop || [];
-      const nyKrop = nuvaerendeKrop.concat([
-        "AI-tilpasning ud fra din instruktion (\"" + instruktion + "\"): I den fulde version vil Claude her generere en ny, tilpasset tekst til dette afsnit."
-      ]);
-      saveOverride({ krop: nyKrop, aiJustering: true });
-      renderKrop();
-      aiAssist.hidden = true;
-      aiToggleBtn.classList.remove("active");
-      aiInstruction.value = "";
-      aiGenerateBtn.disabled = false;
-      aiGenerateBtn.textContent = "✨ Generér justering";
-    }, 900);
-  });
-}
-
-// ---- Manuel redigering ----
 const editToggleBtn = document.getElementById("editToggleBtn");
 const editArea = document.getElementById("editArea");
 const editTextarea = document.getElementById("editTextarea");
+const saveEditBtn = document.getElementById("saveEditBtn");
 
-if (editToggleBtn) {
-  editToggleBtn.addEventListener("click", () => {
-    const override = getOverride();
-    const krop = (override && override.krop) || sektion.krop || [];
-    editTextarea.value = krop.join("\n\n");
-    editArea.hidden = false;
-    editToggleBtn.classList.add("active");
-    aiAssist.hidden = true;
-    aiToggleBtn.classList.remove("active");
-  });
-
-  document.getElementById("cancelEditBtn").addEventListener("click", () => {
-    editArea.hidden = true;
-    editToggleBtn.classList.remove("active");
-  });
-
-  document.getElementById("saveEditBtn").addEventListener("click", () => {
-    const nyKrop = editTextarea.value
-      .split(/\n\s*\n/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    saveOverride({ krop: nyKrop });
-    renderKrop();
-    editArea.hidden = true;
-    editToggleBtn.classList.remove("active");
-  });
+function visBesked(tekst, punkter, erFejl) {
+  aiBadgeHolder.innerHTML = "";
+  const boks = document.createElement("div");
+  boks.className = "toast-banner";
+  if (erFejl) boks.style.borderColor = "#b42318";
+  const indhold = document.createElement("div");
+  const p = document.createElement("strong");
+  p.textContent = tekst;
+  indhold.appendChild(p);
+  if (punkter && punkter.length) {
+    const ul = document.createElement("ul");
+    ul.style.margin = "6px 0 0 18px";
+    punkter.forEach((t) => {
+      const li = document.createElement("li");
+      li.textContent = t;
+      ul.appendChild(li);
+    });
+    indhold.appendChild(ul);
+  }
+  boks.appendChild(indhold);
+  const luk = document.createElement("button");
+  luk.type = "button";
+  luk.textContent = "✕";
+  luk.addEventListener("click", () => boks.remove());
+  boks.appendChild(luk);
+  aiBadgeHolder.appendChild(boks);
 }
+
+// Sender ændringen + hele forslaget til serveren og erstatter forslaget med det tilpassede
+async function justerHeleForslaget(aendring) {
+  const knapper = [aiGenerateBtn, saveEditBtn, aiToggleBtn, editToggleBtn];
+  knapper.forEach((b) => { b.disabled = true; });
+  aiAssist.hidden = true;
+  editArea.hidden = true;
+  aiToggleBtn.classList.remove("active");
+  editToggleBtn.classList.remove("active");
+  visBesked("⏳ Justerer hele forløbet, så alle afsnit passer sammen med ændringen. Det tager typisk 30-90 sekunder …");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  let svar;
+  try {
+    const res = await fetch("/api/juster", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.assign({ input: samlInputTilAI(), forslag: hentForslag(), sektion: sektionId }, aendring))
+    });
+    svar = await res.json().catch(() => ({ fejl: "Serveren svarede ikke som forventet (" + res.status + ")." }));
+  } catch (e) {
+    svar = { fejl: "Kunne ikke få forbindelse til serveren. Tjek din internetforbindelse, og prøv igen." };
+  } finally {
+    knapper.forEach((b) => { b.disabled = false; });
+  }
+
+  if (!svar.forslag) {
+    visBesked("⚠️ " + (svar.fejl || "Justeringen mislykkedes.") + " Forslaget er uændret.", null, true);
+    return false;
+  }
+  EpxState.set("forslag", svar.forslag);
+  sektion = hentForslagSektioner().find((s) => s.id === sektionId);
+  render();
+  visBesked("✅ Hele forløbet er tilpasset. Det er ændret:", svar.aendringer);
+  return true;
+}
+
+aiToggleBtn.addEventListener("click", () => {
+  aiAssist.hidden = !aiAssist.hidden;
+  aiToggleBtn.classList.toggle("active", !aiAssist.hidden);
+  editArea.hidden = true;
+  editToggleBtn.classList.remove("active");
+  if (!aiAssist.hidden) aiInstruction.focus();
+});
+
+aiGenerateBtn.addEventListener("click", async () => {
+  const instruktion = aiInstruction.value.trim();
+  if (!instruktion) {
+    aiInstruction.focus();
+    return;
+  }
+  if (await justerHeleForslaget({ instruktion: instruktion })) aiInstruction.value = "";
+});
+
+editToggleBtn.addEventListener("click", () => {
+  editTextarea.value = (sektion.krop || []).join("\n\n");
+  editArea.hidden = false;
+  editToggleBtn.classList.add("active");
+  aiAssist.hidden = true;
+  aiToggleBtn.classList.remove("active");
+});
+
+document.getElementById("cancelEditBtn").addEventListener("click", () => {
+  editArea.hidden = true;
+  editToggleBtn.classList.remove("active");
+});
+
+saveEditBtn.addEventListener("click", () => {
+  const nyKrop = editTextarea.value
+    .split(/\n\s*\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!nyKrop.length) return;
+  justerHeleForslaget({ manuelKrop: nyKrop });
+});

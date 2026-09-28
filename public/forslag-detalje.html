@@ -55,13 +55,13 @@
     <label for="aiInstruction">Hvad skal justeres?</label>
     <textarea id="aiInstruction" placeholder="Fx: Gør sproget mere enkelt, eller tilføj et eksempel med genbrugsmaterialer ..."></textarea>
     <button class="btn-primary" id="aiGenerateBtn" type="button">✨ Generér justering</button>
-    <p class="ai-note">Dette er en prototype – i den fulde version sender dette en anmodning til Claude, som skriver et opdateret forslag til dette afsnit.</p>
+    <p class="ai-note">Claude justerer dette afsnit og tilpasser automatisk alle de øvrige afsnit, så hele forløbet hænger sammen.</p>
   </div>
 
   <div class="edit-area" id="editArea" hidden>
     <textarea id="editTextarea"></textarea>
     <div class="edit-actions">
-      <button class="btn-primary" id="saveEditBtn" type="button">💾 Gem ændringer</button>
+      <button class="btn-primary" id="saveEditBtn" type="button">💾 Gem og tilpas hele forløbet</button>
       <button class="btn-tool" id="cancelEditBtn" type="button">Annullér</button>
     </div>
   </div>
