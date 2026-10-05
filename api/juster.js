@@ -40,12 +40,13 @@ module.exports = (req, res) =>
       " Bevar ordret alt, der ikke påvirkes af ændringen – ændr kun det, der er nødvendigt for sammenhængen." +
       " I aendringer skriver du 1-6 korte punkter på dansk om, hvad du har ændret og i hvilke afsnit.";
 
-    const nyt = await kaldClaude(besked, JUSTER_SKEMA);
+    let hastighed;
+    const nyt = await kaldClaude(besked, JUSTER_SKEMA, { vedBrug: (u) => { hastighed = u.speed; } });
     const aendringer = nyt.aendringer;
     delete nyt.aendringer;
     // Lærerens egen tekst bevares under alle omstændigheder præcis som skrevet
     if (Array.isArray(manuelKrop) && nyt.sektioner[sektion]) {
       nyt.sektioner[sektion].krop = manuelKrop;
     }
-    return { forslag: nyt, aendringer };
+    return { forslag: nyt, aendringer, hastighed };
   });

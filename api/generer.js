@@ -27,13 +27,14 @@ module.exports = async function generer(req, res) {
   });
   const linje = (obj) => res.write(JSON.stringify(obj) + "\n");
 
+  let hastighed;
   try {
     const forslag = await kaldClaude(
       "Lav et forløbsforslag ud fra disse input:\n\n" + beskrivInput(input),
       FORSLAG_SKEMA,
-      { effort: "low", vedTekst: (d) => linje({ d: d }) }
+      { effort: "low", vedTekst: (d) => linje({ d: d }), vedBrug: (u) => { hastighed = u.speed; } }
     );
-    linje({ forslag: forslag });
+    linje({ forslag: forslag, hastighed: hastighed });
   } catch (err) {
     if (!(err instanceof ForslagFejl)) console.error("Uventet fejl:", err);
     linje({ fejl: err instanceof ForslagFejl ? err.message : "Der opstod en uventet fejl. Prøv igen." });
