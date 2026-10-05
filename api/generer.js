@@ -32,7 +32,7 @@ module.exports = async function generer(req, res) {
     const forslag = await kaldClaude(
       "Lav et forløbsforslag ud fra disse input:\n\n" + beskrivInput(input),
       FORSLAG_SKEMA,
-      { effort: "low", vedTekst: (d) => linje({ d: d }), vedBrug: (u) => { hastighed = u.speed || (u.hurtigAfvist ? "standard (hurtig afvist: " + u.hurtigAfvist + ")" : "ukendt"); } }
+      { effort: "medium", vedTekst: (d) => linje({ d: d }), vedBrug: (u) => { hastighed = u.speed || (u.hurtigAfvist ? "standard (hurtig afvist: " + u.hurtigAfvist + ")" : "ukendt"); } }
     );
     linje({ forslag: forslag, hastighed: hastighed });
   } catch (err) {
