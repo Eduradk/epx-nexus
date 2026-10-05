@@ -6,6 +6,9 @@
     },
     "api/juster.js": {
       "maxDuration": 300
+    },
+    "api/produkt.js": {
+      "maxDuration": 300
     }
   }
 }

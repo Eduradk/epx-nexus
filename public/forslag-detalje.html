@@ -70,9 +70,24 @@
     <div id="aiBadgeHolder"></div>
     <div class="detail-body" id="detailBody"></div>
   </div>
+
+  <!-- Vises kun under "Øvelser, cases og opgaver": AI udarbejder en PowerPoint eller et Word-dokument til forløbet -->
+  <div class="ai-assist no-print" id="produktBlok" hidden>
+    <label for="produktBeskrivelse">Udarbejd dit eget med AI</label>
+    <p class="ai-note" style="margin:0 0 8px;">Hvad vil du udvikle?</p>
+    <div class="detail-toolbar" id="produktVaelger" role="group" aria-label="Vælg hvad du vil udvikle">
+      <button type="button" class="btn-tool active" data-type="powerpoint">📊 PowerPoint</button>
+      <button type="button" class="btn-tool" data-type="word">📄 Word-dokument</button>
+    </div>
+    <p class="ai-note" id="produktHint" style="margin:0 0 8px;"></p>
+    <textarea id="produktBeskrivelse" maxlength="2000"></textarea>
+    <button class="btn-primary" id="produktBtn" type="button"></button>
+    <p class="ai-note" id="produktStatus" hidden></p>
+  </div>
 </div>
 
 <script src="epx-data.js"></script>
+<script src="export.js"></script>
 <script src="forslag-detalje.js"></script>
 </body>
 </html>

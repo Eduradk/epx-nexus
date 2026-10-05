@@ -196,6 +196,9 @@ function render() {
 }
 render();
 
+// ---- Download dette afsnit som Word / PowerPoint / PDF ----
+if (sektion) EpxExport.attachMenu(document.getElementById("printBtn"), () => bygSektionEksport(sektionId));
+
 // ---- Print ----
 document.getElementById("printBtn").addEventListener("click", () => window.print());
 
@@ -311,3 +314,96 @@ saveEditBtn.addEventListener("click", () => {
   if (!nyKrop.length) return;
   justerHeleForslaget({ manuelKrop: nyKrop });
 });
+
+// ---- Udarbejd dit eget med AI: PowerPoint eller Word-dokument, der passer til forløbet ----
+// AI'en skriver indholdet (api/produkt.js), og filen bygges i browseren af export.js.
+const PRODUKT_TYPER = {
+  powerpoint: {
+    hint: "Beskriv, hvad PowerPointen skal handle om. AI'en udarbejder en præsentation, der passer til forløbet. Du henter den som .pptx-fil og kan selv redigere den i PowerPoint bagefter.",
+    placeholder: "Fx: En præsentation, der introducerer forløbet og de vigtigste begreber for eleverne",
+    btn: "📊 Udarbejd PowerPoint",
+    busy: "📊 Udarbejder PowerPoint …",
+    faerdig: (t) => "✅ PowerPointen \"" + t + "\" er hentet ned til din computer (kig i mappen \"Overførsler\"/\"Downloads\"). Åbn den i PowerPoint for at redigere."
+  },
+  word: {
+    hint: "Beskriv, hvad dokumentet skal handle om. AI'en udarbejder et dokument, der passer til forløbet. Du henter det som .docx-fil og kan selv redigere det i Word bagefter.",
+    placeholder: "Fx: Et opgaveark til eleverne med fem spørgsmål til casen",
+    btn: "📄 Udarbejd Word-dokument",
+    busy: "📄 Udarbejder Word-dokument …",
+    faerdig: (t) => "✅ Word-dokumentet \"" + t + "\" er hentet ned til din computer (kig i mappen \"Overførsler\"/\"Downloads\"). Åbn det i Word for at redigere."
+  }
+};
+
+(function () {
+  const blok = document.getElementById("produktBlok");
+  if (!sektion || sektionId !== "materialer") return;
+  blok.hidden = false;
+
+  const vaelger = document.getElementById("produktVaelger");
+  const hint = document.getElementById("produktHint");
+  const beskrivelse = document.getElementById("produktBeskrivelse");
+  const knap = document.getElementById("produktBtn");
+  const status = document.getElementById("produktStatus");
+  let valgt = "powerpoint";
+
+  function vaelg(type) {
+    valgt = type;
+    vaelger.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.type === type));
+    hint.textContent = PRODUKT_TYPER[type].hint;
+    beskrivelse.placeholder = PRODUKT_TYPER[type].placeholder;
+    knap.textContent = PRODUKT_TYPER[type].btn;
+    status.hidden = true;
+  }
+  vaelger.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => vaelg(b.dataset.type)));
+  vaelg(valgt);
+
+  function visStatus(tekst, erFejl) {
+    status.textContent = tekst;
+    status.style.color = erFejl ? "#b42318" : "";
+    status.hidden = false;
+  }
+
+  knap.addEventListener("click", async () => {
+    const tekst = beskrivelse.value.trim();
+    if (!tekst) {
+      beskrivelse.focus();
+      return;
+    }
+    const type = valgt;
+    const cfg = PRODUKT_TYPER[type];
+    knap.disabled = true;
+    knap.textContent = cfg.busy;
+    visStatus("⏳ AI'en skriver indholdet. Det tager typisk under et minut …");
+
+    try {
+      const res = await fetch("/api/produkt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: samlInputTilAI(), forslag: hentForslag(), format: type, beskrivelse: tekst })
+      });
+      const svar = await res.json().catch(() => ({}));
+      if (!res.ok || !svar.produkt) throw new Error(svar.fejl || "Serveren svarede med fejl " + res.status + ".");
+
+      const p = svar.produkt;
+      const dok = {
+        filename: p.title,
+        kind: type === "powerpoint" ? "Præsentation" : "Undervisningsmateriale",
+        title: p.title,
+        subtitle: p.subtitle || "",
+        meta: eksportMeta(),
+        // Samme opbygning til begge filtyper: hvert slide/afsnit er en overskrift med tekst (punkter starter med "- ")
+        sections: type === "powerpoint"
+          ? p.slides.map((s) => ({ heading: s.heading, body: (s.bullets || []).map((b) => "- " + b).join("\n") }))
+          : p.sections.map((s) => ({ heading: s.heading, body: s.body }))
+      };
+      await (type === "powerpoint" ? EpxExport.toPowerPoint(dok) : EpxExport.toWord(dok));
+      visStatus(cfg.faerdig(p.title));
+      beskrivelse.value = "";
+    } catch (err) {
+      visStatus("⚠️ " + (err.message || "Kunne ikke udarbejde materialet. Prøv igen om lidt."), true);
+    } finally {
+      knap.disabled = false;
+      knap.textContent = PRODUKT_TYPER[valgt].btn;
+    }
+  });
+})();

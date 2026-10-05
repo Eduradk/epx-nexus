@@ -456,3 +456,70 @@ function samlInputTilAI() {
     saerligeOensker: d.saerligeOensker || ""
   };
 }
+
+/* ---------------------------------------------------------
+   Download som Word, PowerPoint og PDF (filerne bygges i export.js)
+   Her beskrives kun INDHOLDET, så de tre filtyper altid indeholder det samme.
+--------------------------------------------------------- */
+function eksportMeta() {
+  const i = samlInputTilAI();
+  return [
+    ["Fag", i.fag || ""],
+    ["Erhvervsområde", i.erhverv.omraade],
+    ["Erhvervsuddannelser", i.erhverv.specifikke.join(", ")],
+    ["Tidsramme", (i.formaal && i.formaal.tidsrammeValg) || ""],
+    ["Dato", new Date().toLocaleDateString("da-DK", { day: "numeric", month: "long", year: "numeric" })]
+  ].filter((r) => r[1]);
+}
+
+// Ét afsnit som almindelig tekst: brødtekst først, derefter punkter (linjer med "- " bliver til punktopstilling)
+function eksportSektionTekst(sektion) {
+  const linjer = [];
+  if (sektion.resume && !(sektion.krop || []).length) linjer.push(sektion.resume);
+  (sektion.krop || []).forEach((a) => linjer.push(a));
+  (sektion.liste || []).forEach((p) => linjer.push(/^\d+[.)]/.test(p) ? p : "- " + p));
+  (sektion.udstyr || []).forEach((v) => linjer.push("- " + v.navn + " (" + v.antal + ") – " + v.kategori));
+  (sektion.henvisninger || []).forEach((h) => linjer.push("- " + h.titel + " – " + h.kilde + " (" + h.type + ")"));
+  return linjer.join("\n");
+}
+
+function eksportMaterialer() {
+  return genererMaterialer().map((m) => ({
+    title: m.type + ": " + m.titel,
+    source: "AI-genereret materiale – skal gennemgås af underviseren før brug",
+    content: m.krop.join("\n")
+  }));
+}
+
+// Hele forslaget (forsiden)
+function bygForslagEksport() {
+  const forslag = hentForslag();
+  if (!forslag || forslagUdkast) return null;
+  return {
+    filename: "Forløb " + forslag.titel,
+    kind: "Forløbsforslag",
+    title: forslag.titel,
+    subtitle: forslag.undertitel || "",
+    meta: eksportMeta(),
+    sections: hentForslagSektioner()
+      .filter((s) => !s.dynamisk)
+      .map((s) => ({ heading: s.titel, body: eksportSektionTekst(s) })),
+    materials: eksportMaterialer()
+  };
+}
+
+// Ét afsnit (detaljesiden)
+function bygSektionEksport(sektionId) {
+  const forslag = hentForslag();
+  const sektion = hentForslagSektioner().find((s) => s.id === sektionId);
+  if (!forslag || !sektion) return null;
+  return {
+    filename: sektion.titel + " " + forslag.titel,
+    kind: sektion.titel,
+    title: forslag.titel,
+    subtitle: forslag.undertitel || "",
+    meta: eksportMeta(),
+    sections: sektion.dynamisk ? [] : [{ heading: sektion.titel, body: eksportSektionTekst(sektion) }],
+    materials: sektion.dynamisk ? eksportMaterialer() : []
+  };
+}

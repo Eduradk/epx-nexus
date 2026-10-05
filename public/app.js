@@ -14,6 +14,13 @@ const generateBtn = document.getElementById("generateBtn");
 const suggestionEmpty = document.getElementById("suggestionEmpty");
 const suggestionContent = document.getElementById("suggestionContent");
 const suggestionEmptyHTML = suggestionEmpty.innerHTML;
+// Download-menu (Word / PowerPoint / PDF) ved siden af print-knappen – vises først, når der er et forslag
+const downloadMenu = EpxExport.attachMenu(document.getElementById("printAllBtn"), bygForslagEksport, {
+  btnClass: "btn-icon-print",
+  html: "⬇️",
+  title: "Download hele forslaget som Word, PowerPoint eller PDF"
+});
+downloadMenu.hidden = true;
 const genBadge = document.getElementById("genBadge");
 const saerligeOensker = document.getElementById("saerligeOensker");
 const charCount = document.getElementById("charCount");
@@ -329,6 +336,7 @@ function showForslag(scrollTil) {
   genBadge.hidden = false;
   document.getElementById("gemForloebBtn").hidden = false;
   document.getElementById("printAllBtn").hidden = false;
+  downloadMenu.hidden = false;
   document.getElementById("newForlobBtn").hidden = false;
   document.getElementById("printDate").textContent = new Date().toLocaleDateString("da-DK");
   stepItems.forEach((item) => {
@@ -480,6 +488,7 @@ function rydKladden() {
   genBadge.hidden = true;
   document.getElementById("gemForloebBtn").hidden = true;
   document.getElementById("printAllBtn").hidden = true;
+  downloadMenu.hidden = true;
   document.getElementById("newForlobBtn").hidden = true;
   document.getElementById("draftBanner").hidden = true;
   stepItems.forEach((item) => item.classList.remove("done"));
