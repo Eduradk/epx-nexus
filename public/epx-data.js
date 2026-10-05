@@ -364,8 +364,40 @@ const FORSLAG_SEKTIONER = [
 const MATERIALE_IKONER = { "Øvelse": "✏️", "Case": "📄", "Opgave": "📝", "Afklaringsøvelse": "🧭" };
 const HENVISNING_IKONER = { PDF: "📄", Web: "🔗", Video: "🎬" };
 
+// Halvfærdigt forslag, der vises mens AI'en skriver (gemmes ikke, før det er færdigt)
+let forslagUdkast = null;
+
+// Læser JSON, der endnu ikke er skrevet færdig: lukker åbne tekster, lister og objekter.
+// Returnerer null, hvis der ikke er noget brugbart endnu.
+function parseDelvisJson(tekst) {
+  const stak = [];
+  let iTekst = false;
+  let escape = false;
+  let sikker = null; // seneste sted, hvor alt før er komplet (lige før et komma)
+  for (let i = 0; i < tekst.length; i++) {
+    const c = tekst[i];
+    if (iTekst) {
+      if (escape) escape = false;
+      else if (c === "\\") escape = true;
+      else if (c === '"') iTekst = false;
+    } else if (c === '"') iTekst = true;
+    else if (c === "{" || c === "[") stak.push(c === "{" ? "}" : "]");
+    else if (c === "}" || c === "]") stak.pop();
+    else if (c === ",") sikker = { i: i, luk: stak.slice().reverse().join("") };
+  }
+  const forsoeg = [tekst.replace(/\\$/, "") + (iTekst ? '"' : "") + stak.slice().reverse().join("")];
+  if (sikker) forsoeg.push(tekst.slice(0, sikker.i) + sikker.luk);
+  for (const f of forsoeg) {
+    try {
+      return JSON.parse(f);
+    } catch (e) { /* prøv næste */ }
+  }
+  return null;
+}
+
 // Det genererede forslag (eller null, hvis der endnu ikke er genereret et)
 function hentForslag() {
+  if (forslagUdkast) return forslagUdkast;
   const f = EpxState.get().forslag;
   return f && f.sektioner ? f : null;
 }

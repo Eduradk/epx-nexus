@@ -934,3 +934,7 @@ a.input-tile { text-decoration: none; color: inherit; }
   .edit-actions { display: none !important; }
 }
 .print-order-mode .udstyr-item.checked { display: none; }
+
+/* Mens AI'en skriver forslaget, kan afsnittene ikke åbnes endnu */
+.suggestion-sections.skrives { pointer-events: none; }
+.suggestion-sections.skrives .tile-chev { visibility: hidden; }

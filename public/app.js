@@ -281,8 +281,8 @@ function renderForslag() {
   const heroSubtitle = document.getElementById("heroSubtitle");
 
   const forslag = hentForslag();
-  heroTitle.textContent = forslag.titel;
-  heroSubtitle.textContent = forslag.undertitel;
+  heroTitle.textContent = forslag.titel || "";
+  heroSubtitle.textContent = forslag.undertitel || "";
 
   if (gren && GREN_BILLEDER[gren.id]) {
     heroCard.classList.remove("no-image");
@@ -306,11 +306,13 @@ function renderForslag() {
     a.href = "forslag-detalje.html?sektion=" + sektion.id;
     let resume = sektion.resume;
     if (sektion.id === "udstyr") {
-      resume = sektion.udstyr.length + " varer – kan bruges som bestillingsliste til de aktiviteter, der kræver særligt udstyr.";
+      resume = sektion.udstyr ? sektion.udstyr.length + " varer – kan bruges som bestillingsliste til de aktiviteter, der kræver særligt udstyr." : "";
     } else if (sektion.dynamisk) {
       const materialer = genererMaterialer();
-      resume = materialer.length + " AI-genererede materialer klar til brug" + (materialer.some((m) => m.id === "afklaring") ? ", inkl. en afklaringsøvelse" : "") + ".";
+      resume = materialer.length ? materialer.length + " AI-genererede materialer klar til brug" + (materialer.some((m) => m.id === "afklaring") ? ", inkl. en afklaringsøvelse" : "") + "." : "";
     }
+    // Mens forslaget skrives, er de sidste afsnit endnu ikke nået
+    if (!resume && forslagUdkast) resume = "✍️ Skrives …";
     // AI-tekst indsættes som tekst (ikke HTML)
     a.innerHTML = '<div class="section-title">' + sektion.ikon + " " + sektion.titel + '<span class="tile-chev">›</span></div><p></p>';
     a.querySelector("p").textContent = resume || "";
@@ -354,26 +356,65 @@ function visGenereringsStatus(tekst, erFejl) {
   suggestionEmpty.appendChild(p);
 }
 
+// Viser det halvfærdige forslag, mens AI'en skriver. Afsnittene kan først åbnes, når forslaget er færdigt.
+function visUdkast(udkast) {
+  if (!udkast.sektioner) udkast.sektioner = {};
+  forslagUdkast = udkast;
+  renderForslag();
+  document.getElementById("suggestionSections").classList.add("skrives");
+  suggestionEmpty.hidden = true;
+  suggestionContent.hidden = false;
+}
+
 // "Generér forslag" sender ALLE input til AI'en og viser det forslag, der kommer tilbage
 generateBtn.addEventListener("click", async () => {
   const knapTekst = generateBtn.textContent;
   generateBtn.disabled = true;
   generateBtn.textContent = "⏳ Genererer forslag …";
-  visGenereringsStatus("⏳ AI'en skriver dit forslag ud fra alle dine input. Det tager typisk 30-90 sekunder …");
+  visGenereringsStatus("⏳ AI'en læser dine input og går i gang med at skrive. Forslaget dukker op her om et øjeblik …");
   suggestionEmpty.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  let svar;
+  let svar = null;
   try {
     const res = await fetch("/api/generer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ input: samlInputTilAI() })
     });
-    svar = await res.json().catch(() => ({ fejl: "Serveren svarede ikke som forventet (" + res.status + ")." }));
-    if (!res.ok && !svar.fejl) svar.fejl = "Serveren svarede med fejl " + res.status + ".";
+    if (!res.ok || !res.body) {
+      svar = await res.json().catch(() => ({}));
+      if (!svar.fejl) svar.fejl = "Serveren svarede med fejl " + res.status + ".";
+    } else {
+      // Forslaget kommer som en strøm af linjer – vis det, mens det bliver skrevet
+      const reader = res.body.getReader();
+      const dekoder = new TextDecoder();
+      let buffer = "";
+      let raa = "";
+      let sidstTegnet = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += dekoder.decode(value, { stream: true });
+        const linjer = buffer.split("\n");
+        buffer = linjer.pop();
+        linjer.filter(Boolean).forEach((l) => {
+          const besked = JSON.parse(l);
+          if (besked.d) raa += besked.d;
+          else svar = besked;
+        });
+        if (!svar && Date.now() - sidstTegnet > 300) {
+          sidstTegnet = Date.now();
+          const udkast = parseDelvisJson(raa);
+          if (udkast && udkast.titel) visUdkast(udkast);
+        }
+      }
+      if (!svar) svar = { fejl: "Forbindelsen blev afbrudt, før forslaget var færdigt. Prøv igen." };
+    }
   } catch (e) {
     svar = { fejl: "Kunne ikke få forbindelse til serveren. Tjek din internetforbindelse, og prøv igen." };
   } finally {
+    forslagUdkast = null;
+    document.getElementById("suggestionSections").classList.remove("skrives");
     generateBtn.disabled = false;
     generateBtn.textContent = knapTekst;
   }
