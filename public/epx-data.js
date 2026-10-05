@@ -7,7 +7,7 @@ const EPX_GRENE = [
     ikon: "🛡️",
     accent: "navy",
     beskrivelse: "Det pædagogiske og socialfaglige område samt sundheds- og sikkerhedsområdet.",
-    erhverv: ["Pædagog", "Socialrådgiver", "Sygeplejerske", "Politibetjent", "Beredskabsmedarbejder", "Ergoterapeut", "Fysioterapeut", "Bioanalytiker"]
+    erhverv: ["Pædagogisk assistent", "Social- og sundhedsassistent", "Social- og sundhedshjælper", "Ambulancebehandler", "Sikkerhedsvagt", "Tandklinikassistent", "Audiologi- og neurofysiologitekniker", "Serviceassistent"]
   },
   {
     id: "natur",
@@ -15,7 +15,7 @@ const EPX_GRENE = [
     ikon: "🌱",
     accent: "green",
     beskrivelse: "Jordbrug, skovbrug, naturforvaltning, teknik og miljø, biotek samt fødevareområdet.",
-    erhverv: ["Jordbrugsteknolog", "Skov- og naturtekniker", "Fødevareingeniør", "Miljøteknolog", "Veterinærsygeplejerske", "Ernæringsassistent", "Bioteknolog", "Anlægsgartner"]
+    erhverv: ["Landbrugsuddannelsen (landmand)", "Skov- og naturtekniker", "Anlægsgartner", "Dyrepasser", "Veterinærsygeplejerske", "Ernæringsassistent", "Gastronom (kok)", "Bager og konditor", "Mejerist", "Procesoperatør"]
   },
   {
     id: "business",
@@ -23,7 +23,7 @@ const EPX_GRENE = [
     ikon: "💼",
     accent: "purple",
     beskrivelse: "Det merkantile område – handel, markedsføring, økonomi og innovation.",
-    erhverv: ["Detailhandelsassistent", "Markedsføringsøkonom", "Finansøkonom", "Eventkoordinator", "Erhvervsjurist", "Iværksætter", "Kontoruddannet", "International handel og shipping"]
+    erhverv: ["Kontoruddannelsen", "Detailhandelsuddannelsen (salgsassistent)", "Handelsuddannelsen (handelsassistent)", "Finansuddannelsen", "Eventkoordinator", "Hotelreceptionist", "Mediegrafiker", "Webudvikler"]
   },
   {
     id: "haandvaerk",
@@ -31,7 +31,7 @@ const EPX_GRENE = [
     ikon: "🛠️",
     accent: "blue",
     beskrivelse: "Byggeri, industri, energiforsyning, design og kunsthåndværk.",
-    erhverv: ["Tømrer", "Snedker", "Elektriker", "VVS'er", "Bygningskonstruktør", "Møbelsnedker", "Designteknolog", "Smed"]
+    erhverv: ["Tømrer", "Bygningssnedker", "Møbelsnedker", "Murer", "Elektriker", "VVS-energiuddannelsen (vvs'er)", "Smed", "Industritekniker", "Teknisk designer", "Beklædningshåndværker", "Guld- og sølvsmed"]
   }
 ];
 
@@ -409,7 +409,8 @@ function samlInputTilAI() {
     erhverv: {
       omraade: gren ? gren.navn : "",
       omraadeBeskrivelse: gren ? gren.beskrivelse : "",
-      specifikke: (d.erhverv && d.erhverv.specifikke) || [],
+      // Kun erhvervsuddannelser, der stadig findes på listen (ældre gemte valg kan indeholde udgåede navne)
+      specifikke: ((d.erhverv && d.erhverv.specifikke) || []).filter((navn) => gren && gren.erhverv.includes(navn)),
       fritekst: (d.erhverv && d.erhverv.fritekst) || ""
     },
     lokaler: d.lokaler || null,
