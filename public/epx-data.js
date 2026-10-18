@@ -319,8 +319,8 @@ const GREN_BILLEDER = {
 const AI_VARSEL = "🤖 AI-genereret materiale. Indholdet er automatisk genereret ud fra dine input og skal gennemgås og kvalitetssikres af underviseren, før det tages i brug.";
 
 // Samler en kort, læsbar liste over de valg, brugeren rent faktisk har tastet ind – bruges til at vise gennemsigtighed i AI-materialer
-function samlBrugerValg() {
-  const data = EpxState.get();
+function samlBrugerValg(data) {
+  data = data || EpxState.get();
   const dele = [];
   if (data.fag) {
     dele.push(data.fag === "Andet fag" ? (data.fagAndet || "Andet fag") : data.fag);
@@ -395,11 +395,94 @@ function parseDelvisJson(tekst) {
   return null;
 }
 
-// Det genererede forslag (eller null, hvis der endnu ikke er genereret et)
+/* ---------------------------------------------------------
+   Genererede forløb. Hvert forløb gemmer sine EGNE valg (raa = felterne, input = til AI'en), så
+   felterne på forsiden kan ryddes til et nyt forløb, mens justeringer af et færdigt forløb stadig
+   bygger på de valg, det blev lavet ud fra. Ét forløb ad gangen er "aktivt" (vises til højre og
+   åbnes på detaljesiden).
+--------------------------------------------------------- */
+const INPUT_NOEGLER = ["fag", "fagAndet", "erhverv", "lokaler", "paedagogisk", "didaktisk", "formaal",
+  "forudsaetninger", "afklaringsgrad", "afklaringsfokus", "afklaringSkipped", "saerligeOensker"];
+
+// En uafhængig kopi af felternes værdier
+function kopierInput(d) {
+  const kopi = {};
+  INPUT_NOEGLER.forEach((k) => {
+    if (d[k] !== undefined) kopi[k] = JSON.parse(JSON.stringify(d[k]));
+  });
+  return kopi;
+}
+
+function hentForloebListe() {
+  const d = EpxState.get();
+  if (Array.isArray(d.forloeb)) return d.forloeb;
+  // Ældre kladde med ét forslag direkte i kladden: lav det om til et forløb
+  const liste = [];
+  if (d.forslag && d.forslag.sektioner) {
+    const raa = kopierInput(d);
+    liste.push({ id: "f" + Date.now(), forslag: d.forslag, raa: raa, input: samlInputTilAI(raa),
+      oprettet: Date.now(), gemtId: d.aabentForloebId || null, titel: d.forslagTitel || null });
+    EpxState.set("aktivtForloebId", liste[0].id);
+    EpxState.clearKey("forslag");
+  }
+  EpxState.set("forloeb", liste);
+  return liste;
+}
+
+function hentAktivtForloeb() {
+  const liste = hentForloebListe();
+  const id = EpxState.get().aktivtForloebId;
+  return liste.find((f) => f.id === id) || liste[liste.length - 1] || null;
+}
+
+function saetAktivtForloeb(id) {
+  EpxState.set("aktivtForloebId", id);
+}
+
+function tilfoejForloeb(felter) {
+  const liste = hentForloebListe();
+  const nyt = Object.assign({ id: "f" + Date.now() + Math.random().toString(36).slice(2, 6), oprettet: Date.now() }, felter);
+  liste.push(nyt);
+  EpxState.set("forloeb", liste);
+  saetAktivtForloeb(nyt.id);
+  return nyt;
+}
+
+function opdaterForloeb(id, aendringer) {
+  const liste = hentForloebListe();
+  const f = liste.find((x) => x.id === id);
+  if (!f) return;
+  Object.assign(f, aendringer);
+  EpxState.set("forloeb", liste);
+}
+
+function fjernForloeb(id) {
+  EpxState.set("forloeb", hentForloebListe().filter((f) => f.id !== id));
+  if (EpxState.get().aktivtForloebId === id) EpxState.clearKey("aktivtForloebId");
+}
+
+// Gemmer et justeret forslag i det aktive forløb
+function opdaterForslag(forslag) {
+  const aktivt = hentAktivtForloeb();
+  if (aktivt) opdaterForloeb(aktivt.id, { forslag: forslag });
+}
+
+// Det aktive forløbs egne valg – bruges ved justering, PowerPoint/Word og download
+function forloebInput() {
+  const aktivt = hentAktivtForloeb();
+  return (aktivt && aktivt.input) || samlInputTilAI();
+}
+
+function forloebRaa() {
+  const aktivt = hentAktivtForloeb();
+  return (aktivt && aktivt.raa) || EpxState.get();
+}
+
+// Det aktive forløbs forslag (eller det halvfærdige, mens AI'en skriver) – null, hvis der ikke er noget
 function hentForslag() {
   if (forslagUdkast) return forslagUdkast;
-  const f = EpxState.get().forslag;
-  return f && f.sektioner ? f : null;
+  const aktivt = hentAktivtForloeb();
+  return aktivt && aktivt.forslag && aktivt.forslag.sektioner ? aktivt.forslag : null;
 }
 
 // Afsnittene flettet sammen med det genererede indhold – bruges af forsiden og detaljesiden
@@ -420,7 +503,7 @@ function hentForslagSektioner() {
 function genererMaterialer() {
   const forslag = hentForslag();
   if (!forslag) return [];
-  const valgListe = samlBrugerValg();
+  const valgListe = samlBrugerValg(forslagUdkast ? EpxState.get() : forloebRaa());
   const baseretPaa = valgListe.length ? valgListe.join(" · ") : "ingen valg fra \"Dine input\"";
   return (forslag.materialer || []).map((m, i) => ({
     id: m.type === "Afklaringsøvelse" ? "afklaring" : "materiale" + i,
@@ -433,8 +516,8 @@ function genererMaterialer() {
 }
 
 // Samler ALLE lærerens input til AI'en – med læsbare navne i stedet for interne id'er
-function samlInputTilAI() {
-  const d = EpxState.get();
+function samlInputTilAI(d) {
+  d = d || EpxState.get();
   const gren = d.erhverv && d.erhverv.hovedomraade ? EPX_GRENE.find((g) => g.id === d.erhverv.hovedomraade) : null;
   return {
     fag: d.fag === "Andet fag" ? d.fagAndet : d.fag,
@@ -462,7 +545,7 @@ function samlInputTilAI() {
    Her beskrives kun INDHOLDET, så de tre filtyper altid indeholder det samme.
 --------------------------------------------------------- */
 function eksportMeta() {
-  const i = samlInputTilAI();
+  const i = forloebInput();
   return [
     ["Fag", i.fag || ""],
     ["Erhvervsområde", i.erhverv.omraade],

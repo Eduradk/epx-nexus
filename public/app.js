@@ -197,7 +197,7 @@ renderAlleDineInputTiles();
 // Er der overhovedet noget gemt fra et tidligere besøg?
 function harGemtUdkast() {
   const data = EpxState.get();
-  if (data.forslagGenereret || data.fag || data.saerligeOensker || data.afklaringsgrad || data.afklaringSkipped) {
+  if (data.fag || data.saerligeOensker || data.afklaringsgrad || data.afklaringSkipped) {
     return true;
   }
   return DINE_INPUT_REKKEFOLGE.some((key) => erFeltUdfyldt(key));
@@ -233,10 +233,10 @@ function harGemtUdkast() {
     window.history.replaceState({}, "", window.location.pathname);
   } else if (params.get("aabnet") === "1") {
     // Et gemt forløb er lige åbnet fra "Gemte forløb" – ingen "ikke-afsluttet forløb"-banner
-    const d = EpxState.get();
-    const t = d.forslagTitel || "forløbet";
-    visToast(d.aabentForloebId
-      ? "✏️ \"" + t + "\" er åbnet – du ændrer i det gemte forløb. Tryk 💾 for at gemme ændringerne."
+    const aktivt = hentAktivtForloeb();
+    const t = (aktivt && aktivt.titel) || "forløbet";
+    visToast(aktivt && aktivt.gemtId
+      ? "✏️ \"" + t + "\" er åbnet – det ligger som et punkt 5, og du ændrer i det gemte forløb. Tryk 💾 for at gemme ændringerne."
       : "➕ Nyt forløb oprettet ud fra \"" + t.replace(/ \(kopi\)$/, "") + "\". Det gemte forløb er uændret. Tryk 💾 for at gemme det nye.");
     window.history.replaceState({}, "", window.location.pathname);
   } else if (params.get("utskrift") === "1") {
@@ -270,9 +270,10 @@ document.getElementById("draftContinueBtn").addEventListener("click", () => {
 });
 document.getElementById("ryddeFelterBtn").addEventListener("click", nulstilAlt);
 
-// ---- Byg "Dit forslag": hero-billede (kun hvis erhvervsområde er valgt) + klikbare afsnit ----
+// ---- Byg "Dit forslag" (til højre): hero-billede (kun hvis erhvervsområde er valgt) + klikbare afsnit ----
 function renderForslag() {
-  const erhvervData = EpxState.get().erhverv;
+  // Mens der genereres, bruges felternes valg – ellers det aktive forløbs egne valg
+  const erhvervData = (forslagUdkast ? EpxState.get() : forloebRaa()).erhverv;
   const gren = erhvervData && erhvervData.hovedomraade
     ? EPX_GRENE.find((g) => g.id === erhvervData.hovedomraade)
     : null;
@@ -294,19 +295,20 @@ function renderForslag() {
     heroTag.textContent = gren.navn;
     heroTag.hidden = false;
   } else {
-    // Intet erhvervsområde valgt endnu – undlad billede frem for et misvisende ét
+    // Intet erhvervsområde valgt – undlad billede frem for et misvisende ét
     heroCard.classList.add("no-image");
     heroImg.removeAttribute("src");
     heroTag.hidden = true;
   }
 
+  const aktivt = forslagUdkast ? null : hentAktivtForloeb();
   const list = document.getElementById("suggestionSections");
   list.innerHTML = "";
   hentForslagSektioner().forEach((sektion) => {
     const li = document.createElement("li");
     const a = document.createElement("a");
     a.className = "section-link";
-    a.href = "forslag-detalje.html?sektion=" + sektion.id;
+    a.href = detaljeUrl(sektion.id, aktivt);
     let resume = sektion.resume;
     if (sektion.id === "udstyr") {
       resume = sektion.udstyr ? sektion.udstyr.length + " varer – kan bruges som bestillingsliste til de aktiviteter, der kræver særligt udstyr." : "";
@@ -324,7 +326,11 @@ function renderForslag() {
   });
 }
 
-// Viser det genererede forslag i UI'et – bruges både ved klik på "Generér forslag" og ved genindlæsning af siden
+function detaljeUrl(sektionId, forloeb) {
+  return "forslag-detalje.html?sektion=" + sektionId + (forloeb ? "&forloeb=" + forloeb.id : "");
+}
+
+// Viser det aktive forslag til højre – bruges efter generering, ved skift af forløb og ved genindlæsning
 function showForslag(scrollTil) {
   renderForslag();
   suggestionEmpty.hidden = true;
@@ -335,29 +341,237 @@ function showForslag(scrollTil) {
   downloadMenu.hidden = false;
   document.getElementById("newForlobBtn").hidden = false;
   document.getElementById("printDate").textContent = new Date().toLocaleDateString("da-DK");
-  stepItems.forEach((item) => {
-    if (Number(item.dataset.step) === 2 || Number(item.dataset.step) === 5) {
-      item.classList.add("done");
-    }
-  });
   if (scrollTil) {
     suggestionContent.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
-// Genindlæs et allerede genereret forslag, hvis man navigerer tilbage til forsiden
-if (hentForslag()) {
-  showForslag(false);
+// Intet forløb at vise til højre
+function visTomtForslag() {
+  suggestionContent.hidden = true;
+  suggestionEmpty.innerHTML = suggestionEmptyHTML;
+  suggestionEmpty.hidden = false;
+  genBadge.hidden = true;
+  document.getElementById("gemForloebBtn").hidden = true;
+  document.getElementById("printAllBtn").hidden = true;
+  downloadMenu.hidden = true;
+  document.getElementById("newForlobBtn").hidden = true;
 }
 
-function visGenereringsStatus(tekst, erFejl) {
-  suggestionContent.hidden = true;
-  suggestionEmpty.hidden = false;
+function visFejlTilHoejre(tekst) {
+  visTomtForslag();
   suggestionEmpty.innerHTML = "";
   const p = document.createElement("p");
   p.textContent = tekst;
-  if (erFejl) p.style.color = "#b42318";
+  p.style.color = "#b42318";
   suggestionEmpty.appendChild(p);
+}
+
+/* ---------------------------------------------------------
+   Punkt 5: én boks pr. færdig lærervejledning (kan foldes ud i hele bredden)
+   og til sidst et tomt punkt 5 med ＋ til et nyt forløb.
+--------------------------------------------------------- */
+const laesningPanel = document.getElementById("laesningPanel");
+let foldetUdId = null;
+
+function forloebTitel(f) {
+  return f.titel || (f.forslag && f.forslag.titel) || "Lærervejledning";
+}
+
+function renderForloebKort() {
+  const liste = hentForloebListe();
+  const aktivt = hentAktivtForloeb();
+  const holder = document.getElementById("forloebKortListe");
+  holder.innerHTML = "";
+
+  liste.forEach((f) => {
+    const kort = document.createElement("div");
+    kort.className = "form-card forloeb-kort" + (aktivt && aktivt.id === f.id ? " aktiv" : "");
+
+    const h2 = document.createElement("h2");
+    h2.innerHTML = '<span class="mini-num">5</span> <span>📘</span> <span class="forloeb-titel"></span>';
+    h2.querySelector(".forloeb-titel").textContent = forloebTitel(f);
+
+    const meta = document.createElement("p");
+    meta.className = "forloeb-meta";
+    const dele = [];
+    if (f.forslag && f.forslag.undertitel) dele.push(f.forslag.undertitel);
+    const resume = forloebResume(f.raa || {});
+    if (resume) dele.push(resume);
+    dele.push("Lavet " + datoTekst(f.oprettet));
+    meta.textContent = dele.join(" · ");
+
+    const knapper = document.createElement("div");
+    knapper.className = "forloeb-knapper";
+    const erUdfoldet = foldetUdId === f.id && !laesningPanel.hidden;
+    const fold = document.createElement("button");
+    fold.type = "button";
+    fold.className = "btn-tool fold";
+    fold.textContent = erUdfoldet ? "▴ Fold sammen" : "▾ Fold ud og læs";
+    fold.addEventListener("click", () => (erUdfoldet ? foldSammen() : foldUd(f.id)));
+    const fjern = document.createElement("button");
+    fjern.type = "button";
+    fjern.className = "btn-tool farlig";
+    fjern.textContent = "🗑️ Fjern";
+    fjern.addEventListener("click", () => fjernFraForsiden(f));
+    knapper.appendChild(fold);
+    knapper.appendChild(fjern);
+
+    kort.appendChild(h2);
+    kort.appendChild(meta);
+    kort.appendChild(knapper);
+    holder.appendChild(kort);
+  });
+
+  // Det tomme punkt 5: før første forløb hedder det "Lærervejledning", bagefter "＋ Nyt læringsforløb"
+  const harForloeb = liste.length > 0;
+  document.getElementById("nytForloebTitel").textContent = harForloeb ? "＋ Nyt læringsforløb" : "Lærervejledning";
+  document.getElementById("nytForloebTekst").textContent = harForloeb
+    ? "Felterne i punkt 1-4 er klar til et nyt forløb. Udfyld dem, og generér en ny lærervejledning. Dine færdige lærervejledninger ligger ovenfor."
+    : "Udfyld punkt 1-4 ovenfor, og generér en lærervejledning med baggrund, læringsmål, aktiviteter, materialer og evaluering til dit forløb.";
+  stepItems.forEach((item) => {
+    if (Number(item.dataset.step) === 5) item.classList.toggle("done", harForloeb);
+  });
+}
+
+function foldUd(id) {
+  saetAktivtForloeb(id);
+  foldetUdId = id;
+  renderLaesning();
+  laesningPanel.hidden = false;
+  showForslag(false);
+  renderForloebKort();
+  laesningPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function foldSammen() {
+  const id = foldetUdId;
+  foldetUdId = null;
+  laesningPanel.hidden = true;
+  laesningPanel.innerHTML = "";
+  renderForloebKort();
+  const kort = document.getElementById("forloebKortListe").children[hentForloebListe().findIndex((f) => f.id === id)];
+  if (kort) kort.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function fjernFraForsiden(f) {
+  const gemtTekst = f.gemtId ? " Den gemte udgave under \"Gemte forløb\" påvirkes ikke." : " Den er ikke gemt, så den forsvinder helt.";
+  if (!confirm("Fjern \"" + forloebTitel(f) + "\" fra forsiden?" + gemtTekst)) return;
+  fjernForloeb(f.id);
+  if (foldetUdId === f.id) {
+    foldetUdId = null;
+    laesningPanel.hidden = true;
+    laesningPanel.innerHTML = "";
+  }
+  renderForloebKort();
+  if (hentForslag()) showForslag(false);
+  else visTomtForslag();
+}
+
+// Hele lærervejledningen som læsbar tekst – AI-tekst indsættes altid som tekst (ikke HTML)
+function renderLaesning() {
+  const aktivt = hentAktivtForloeb();
+  const forslag = hentForslag();
+  laesningPanel.innerHTML = "";
+  if (!aktivt || !forslag) return;
+
+  const el = (tag, klasse, tekst) => {
+    const e = document.createElement(tag);
+    if (klasse) e.className = klasse;
+    if (tekst !== undefined) e.textContent = tekst;
+    return e;
+  };
+  const foldKnap = () => {
+    const b = el("button", "btn-tool", "▴ Fold sammen");
+    b.type = "button";
+    b.addEventListener("click", foldSammen);
+    return b;
+  };
+
+  const top = el("div", "laesning-top");
+  const titler = el("div");
+  titler.appendChild(el("h2", "", "📘 " + forslag.titel));
+  if (forslag.undertitel) titler.appendChild(el("p", "", forslag.undertitel));
+  top.appendChild(titler);
+  top.appendChild(foldKnap());
+  laesningPanel.appendChild(top);
+
+  const meta = eksportMeta().map((r) => r[0] + ": " + r[1]).join(" · ");
+  laesningPanel.appendChild(el("p", "laesning-meta", meta));
+
+  hentForslagSektioner().forEach((s) => {
+    const blok = el("div", "laesning-sektion");
+    const hoved = el("div", "laesning-sektion-top");
+    hoved.appendChild(el("h3", "", s.ikon + " " + s.titel));
+    const juster = el("a", "btn-tool", "✏️ Justér dette punkt");
+    juster.href = detaljeUrl(s.id, aktivt);
+    hoved.appendChild(juster);
+    blok.appendChild(hoved);
+
+    (s.krop || []).forEach((a) => blok.appendChild(el("p", "", a)));
+    const punkter = (s.liste || [])
+      .concat((s.udstyr || []).map((v) => v.navn + " – " + v.antal + " (" + v.kategori + ")"))
+      .concat((s.henvisninger || []).map((h) => h.titel + " – " + h.kilde + " (" + h.type + ")"));
+    if (punkter.length) {
+      const ul = el("ul");
+      punkter.forEach((p) => ul.appendChild(el("li", "", p)));
+      blok.appendChild(ul);
+    }
+    if (s.dynamisk) {
+      genererMaterialer().forEach((m) => {
+        blok.appendChild(el("h4", "", m.ikon + " " + m.type + ": " + m.titel));
+        m.krop.forEach((a) => blok.appendChild(el("p", "", a)));
+      });
+    }
+    laesningPanel.appendChild(blok);
+  });
+
+  const bund = el("div", "laesning-bund");
+  bund.appendChild(foldKnap());
+  laesningPanel.appendChild(bund);
+}
+
+/* ---------------------------------------------------------
+   "Nu genereres lærervejledning" + ventebjælke. Bjælken følger, hvor meget tekst der er
+   modtaget (et forslag er typisk ca. 18.000 tegn) eller tiden (typisk under 2 min.) –
+   det, der er længst fremme – og stopper ved 95 %, indtil forslaget er helt færdigt.
+--------------------------------------------------------- */
+const FORVENTET_TEGN = 18000;
+const FORVENTET_SEKUNDER = 110;
+let fremdriftTimer = null;
+let fremdriftStart = 0;
+let fremdriftTegn = 0;
+
+function saetFremdrift(procent) {
+  document.querySelectorAll(".gen-bar-fyld").forEach((e) => { e.style.width = procent + "%"; });
+  document.querySelectorAll(".gen-procent").forEach((e) => { e.textContent = Math.round(procent) + " %"; });
+}
+
+function visFremdrift(vis) {
+  document.querySelectorAll(".gen-progress").forEach((e) => { e.hidden = !vis; });
+}
+
+function startFremdrift() {
+  fremdriftStart = Date.now();
+  fremdriftTegn = 0;
+  saetFremdrift(2);
+  visFremdrift(true);
+  clearInterval(fremdriftTimer);
+  fremdriftTimer = setInterval(() => {
+    const sek = (Date.now() - fremdriftStart) / 1000;
+    const andel = Math.max(fremdriftTegn / FORVENTET_TEGN, sek / FORVENTET_SEKUNDER);
+    saetFremdrift(Math.min(95, 2 + andel * 93));
+  }, 300);
+}
+
+function stopFremdrift(lykkedes) {
+  clearInterval(fremdriftTimer);
+  if (lykkedes) {
+    saetFremdrift(100);
+    setTimeout(() => visFremdrift(false), 900);
+  } else {
+    visFremdrift(false);
+  }
 }
 
 // Viser det halvfærdige forslag, mens AI'en skriver. Afsnittene kan først åbnes, når forslaget er færdigt.
@@ -370,20 +584,25 @@ function visUdkast(udkast) {
   suggestionContent.hidden = false;
 }
 
-// "Generér forslag" sender ALLE input til AI'en og viser det forslag, der kommer tilbage
+// "Generér lærervejledning" sender ALLE input til AI'en. Når forslaget er færdigt, bliver det et punkt 5
+// med sine egne valg, og felterne ryddes til et nyt forløb.
 generateBtn.addEventListener("click", async () => {
+  const raaValg = kopierInput(EpxState.get());
+  const aiInput = samlInputTilAI(raaValg);
   const knapTekst = generateBtn.textContent;
   generateBtn.disabled = true;
-  generateBtn.textContent = "⏳ Genererer forslag …";
-  visGenereringsStatus("⏳ AI'en læser dine input og går i gang med at skrive. Forslaget dukker op her om et øjeblik …");
-  suggestionEmpty.scrollIntoView({ behavior: "smooth", block: "start" });
+  generateBtn.textContent = "⏳ Genererer lærervejledning …";
+  visTomtForslag();
+  suggestionEmpty.hidden = true;
+  startFremdrift();
+  document.getElementById("genProgress").scrollIntoView({ behavior: "smooth", block: "start" });
 
   let svar = null;
   try {
     const res = await fetch("/api/generer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: samlInputTilAI() })
+      body: JSON.stringify({ input: aiInput })
     });
     if (!res.ok || !res.body) {
       svar = await res.json().catch(() => ({}));
@@ -406,6 +625,7 @@ generateBtn.addEventListener("click", async () => {
           if (besked.d) raa += besked.d;
           else svar = besked;
         });
+        fremdriftTegn = raa.length;
         if (!svar && Date.now() - sidstTegnet > 300) {
           sidstTegnet = Date.now();
           const udkast = parseDelvisJson(raa);
@@ -424,21 +644,25 @@ generateBtn.addEventListener("click", async () => {
   }
 
   if (!svar.forslag) {
-    // Et tidligere forslag bevares, hvis der var et
-    if (hentForslag()) showForslag(false);
-    else visGenereringsStatus("⚠️ " + svar.fejl, true);
-    if (hentForslag()) visToast("⚠️ " + svar.fejl + " Dit tidligere forslag er bevaret.");
+    stopFremdrift(false);
+    // Felterne og et eventuelt tidligere forløb bevares
+    if (hentForslag()) {
+      showForslag(false);
+      visToast("⚠️ " + svar.fejl + " Dine felter er ikke ryddet, så du kan prøve igen.");
+    } else {
+      visFejlTilHoejre("⚠️ " + svar.fejl);
+    }
     return;
   }
 
-  // Nyt forslag: tidligere manuelle rettelser og afkrydsninger hører til det gamle forslag
-  EpxState.set("forslag", svar.forslag);
-  EpxState.set("forslagGenereret", true);
-  EpxState.clearKey("forslagOverrides");
-  EpxState.clearKey("udstyrChecked");
+  stopFremdrift(true);
+  tilfoejForloeb({ forslag: svar.forslag, raa: raaValg, input: aiInput });
+  rydInput();
+  renderForloebKort();
   showForslag(true);
+  visToast("✅ Lærervejledningen \"" + svar.forslag.titel + "\" er klar under punkt 5. Felterne er ryddet, så du kan lave et nyt forløb. Vil du ændre noget i den færdige, så åbn de enkelte punkter og brug \"Justér med AI\" eller \"Rediger manuelt\".");
 
-  // Info om manglende login vises kun første gang, man genererer et forslag for dette forløb – og slet ikke hvis man er logget ind
+  // Info om manglende login vises kun første gang – og slet ikke, hvis man er logget ind
   if (!EpxAuth.isLoggedIn() && !EpxState.get().harVistGemPopup) {
     EpxState.set("harVistGemPopup", true);
     const saveModal = document.getElementById("saveModalOverlay");
@@ -458,15 +682,16 @@ generateBtn.addEventListener("click", async () => {
 
 document.getElementById("printAllBtn").addEventListener("click", () => window.print());
 
-// ---- Rydder alle input, så man kan starte et nyt forløb – bruges af flere knapper ----
+// ---- "Ryd alle felter": rydder punkt 1-4. De færdige lærervejledninger i punkt 5 bliver liggende. ----
 function nulstilAlt() {
-  if (!confirm("Er du sikker? Dine nuværende input bliver ryddet, så du kan starte et nyt forløb.")) return;
-  rydKladden();
+  if (!confirm("Er du sikker? Felterne i punkt 1-4 bliver ryddet, så du kan starte et nyt forløb. Dine færdige lærervejledninger i punkt 5 bliver liggende.")) return;
+  rydInput();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// Selve nulstillingen (uden spørgsmål) – bruges også, når et forløb lige er gemt. Rører ALDRIG de gemte forløb.
-function rydKladden() {
-  EpxState.clearAll();
+// Selve nulstillingen af felterne (uden spørgsmål) – bruges også, når en lærervejledning er færdig
+function rydInput() {
+  INPUT_NOEGLER.forEach((k) => EpxState.clearKey(k));
   document.getElementById("fag").value = "";
   document.getElementById("fagAndet").value = "";
   document.getElementById("fagAndetWrap").hidden = true;
@@ -478,23 +703,19 @@ function rydKladden() {
   afklaringCard.classList.remove("skipped");
   afklaringSkipBtn.classList.remove("active");
   afklaringSkipBtn.textContent = "Ikke relevant";
-  suggestionContent.hidden = true;
-  suggestionEmpty.innerHTML = suggestionEmptyHTML;
-  suggestionEmpty.hidden = false;
-  genBadge.hidden = true;
-  document.getElementById("gemForloebBtn").hidden = true;
-  document.getElementById("printAllBtn").hidden = true;
-  downloadMenu.hidden = true;
-  document.getElementById("newForlobBtn").hidden = true;
   document.getElementById("draftBanner").hidden = true;
-  stepItems.forEach((item) => item.classList.remove("done"));
-  document.getElementById("saveModalOverlay").hidden = true;
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  stepItems.forEach((item) => {
+    if (Number(item.dataset.step) <= 4) item.classList.remove("done");
+  });
   markProgress();
   renderAlleDineInputTiles();
 }
 
-document.getElementById("newForlobBtn").addEventListener("click", nulstilAlt);
+// ➕ i "Dit forslag": hop op til punkt 1 for at lave et nyt forløb
+document.getElementById("newForlobBtn").addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  document.getElementById("fag").focus({ preventScroll: true });
+});
 
 // ---- Gem forløb + "Gemte forløb" ----
 const gemModal = document.getElementById("gemModalOverlay");
@@ -508,34 +729,40 @@ function lukModal(el) { el.hidden = true; }
   modal.addEventListener("click", (e) => { if (e.target === modal) lukModal(modal); });
 });
 
-// 💾 Kræver login (samme besked som før). Ellers spørges der efter et navn.
+// 💾 gemmer det forløb, der vises til højre. Kræver login.
 document.getElementById("gemForloebBtn").addEventListener("click", () => {
   if (!EpxAuth.isLoggedIn()) {
     document.getElementById("saveModalOverlay").hidden = false;
     return;
   }
-  const data = EpxState.get();
-  const findes = data.aabentForloebId && EpxForloeb.hent(data.aabentForloebId);
-  gemTitelInput.value = data.forslagTitel || foreslaaForloebTitel(data);
+  const aktivt = hentAktivtForloeb();
+  if (!aktivt) return;
+  const findes = aktivt.gemtId && EpxForloeb.hent(aktivt.gemtId);
+  gemTitelInput.value = aktivt.titel || foreslaaForloebTitel(aktivt.raa || {});
   document.getElementById("gemModalTekst").textContent = findes
-    ? "Du ændrer i et gemt forløb. Ændringerne overskriver den gemte udgave. Forsiden nulstilles bagefter."
-    : "Giv forløbet et navn, så du kan finde det igen. Forsiden nulstilles bagefter, så du kan starte et nyt forløb.";
+    ? "Forløbet er gemt før. Ændringerne overskriver den gemte udgave."
+    : "Giv forløbet et navn, så du kan finde det igen under \"Gemte forløb\".";
   gemModal.hidden = false;
   gemTitelInput.focus();
   gemTitelInput.select();
 });
 
 function gemNu() {
-  const data = EpxState.get();
-  const titel = gemTitelInput.value.trim() || foreslaaForloebTitel(data);
-  const id = EpxForloeb.gem(titel, data, data.aabentForloebId);
+  const aktivt = hentAktivtForloeb();
+  if (!aktivt) return;
+  const titel = gemTitelInput.value.trim() || foreslaaForloebTitel(aktivt.raa || {});
+  // Gemmes i samme form som før (valgene øverst), så "Gemte forløb" kan vise fag og erhvervsområde
+  const data = Object.assign({}, aktivt.raa, { forslag: aktivt.forslag, forslagInput: aktivt.input });
+  const id = EpxForloeb.gem(titel, data, aktivt.gemtId);
   if (!id) {
     alert("Forløbet kunne ikke gemmes – browserens lager er muligvis fuldt. Prøv at slette et gammelt forløb.");
     return;
   }
+  opdaterForloeb(aktivt.id, { gemtId: id, titel: titel });
   lukModal(gemModal);
-  rydKladden();
   renderGemte();
+  renderForloebKort();
+  if (foldetUdId) renderLaesning();
   visToast("✅ \"" + titel + "\" er gemt under \"Gemte forløb\".");
 }
 document.getElementById("gemBekraeftBtn").addEventListener("click", gemNu);
@@ -599,26 +826,30 @@ function renderGemte() {
 // Åbn: først et valg – ændr det gemte forløb, eller opret et nyt ud fra det
 function bedOmAtAabne(f) {
   forloebDerSkalAabnes = f;
-  let tekst = "\"" + f.titel + "\" er gemt. Vil du ændre i det gemte forløb, eller skal der oprettes et nyt forløb ud fra det, så det gemte forbliver uændret?";
-  if (harGemtUdkast()) {
-    tekst += " Bemærk: Dit nuværende, ikke-gemte forløb på forsiden bliver erstattet.";
-  }
-  document.getElementById("aabnModalTekst").textContent = tekst;
+  document.getElementById("aabnModalTekst").textContent =
+    "\"" + f.titel + "\" er gemt. Vil du ændre i det gemte forløb, eller skal der oprettes et nyt forløb ud fra det, så det gemte forbliver uændret? Det åbnes som et punkt 5 på forsiden.";
   aabnModal.hidden = false;
+}
+
+// Et gemt forløb som et forløb på forsiden (virker både med ældre og nye gemte forløb)
+function forloebFraGemt(data) {
+  const raa = kopierInput(data);
+  return { forslag: data.forslag, raa: raa, input: data.forslagInput || samlInputTilAI(raa) };
 }
 
 function aabnForloeb(aendrDetGemte) {
   const f = forloebDerSkalAabnes;
   if (!f) return;
   const data = JSON.parse(JSON.stringify(f.data));
-  if (aendrDetGemte) {
-    data.aabentForloebId = f.id;
-    data.forslagTitel = f.titel;
+  if (!data.forslag) {
+    // Meget gammelt gemt forløb uden færdigt forslag: læg valgene i felterne, så det kan genereres
+    INPUT_NOEGLER.forEach((k) => { if (data[k] !== undefined) EpxState.set(k, data[k]); });
   } else {
-    delete data.aabentForloebId;
-    data.forslagTitel = f.titel + " (kopi)";
+    tilfoejForloeb(Object.assign(forloebFraGemt(data), {
+      gemtId: aendrDetGemte ? f.id : null,
+      titel: aendrDetGemte ? f.titel : f.titel + " (kopi)"
+    }));
   }
-  localStorage.setItem("epxNexusData", JSON.stringify(data));
   window.location.href = "index.html?aabnet=1";
 }
 document.getElementById("aabnAendrBtn").addEventListener("click", () => aabnForloeb(true));
@@ -628,15 +859,21 @@ document.getElementById("aabnNytBtn").addEventListener("click", () => aabnForloe
 function printGemt(f) {
   const raw = localStorage.getItem("epxNexusData");
   localStorage.setItem("epxNexusPrintBackup", raw === null ? "__none__" : raw);
-  localStorage.setItem("epxNexusData", JSON.stringify(f.data));
+  const midlertidig = Object.assign({ id: "print", oprettet: f.gemt, titel: f.titel }, forloebFraGemt(f.data));
+  localStorage.setItem("epxNexusData", JSON.stringify({ forloeb: [midlertidig], aktivtForloebId: "print" }));
   window.location.href = "index.html?utskrift=1";
 }
 
 function sletGemt(f) {
   if (!confirm("Slet \"" + f.titel + "\" for altid? Det kan ikke fortrydes.")) return;
   EpxForloeb.slet(f.id);
+  // Forløb på forsiden, der pegede på det slettede, er ikke længere gemt
+  hentForloebListe().filter((x) => x.gemtId === f.id).forEach((x) => opdaterForloeb(x.id, { gemtId: null }));
   renderGemte();
 }
 
+// ---- Ved sidens indlæsning ----
+renderForloebKort();
+if (hentForslag()) showForslag(false);
 renderGemte();
 document.addEventListener("epx-auth-changed", renderGemte);

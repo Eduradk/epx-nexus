@@ -183,16 +183,19 @@
       <button id="afklaringSkipBtn" class="btn-skip" type="button">Ikke relevant</button>
     </div>
 
-    <div class="form-card">
-      <h2><span class="mini-num">5</span> Lærervejledning</h2>
-      <div class="guidance-row">
-        <span>📘</span>
-        <span>Se den samlede vejledning med baggrund, anbefalinger, aktiviteter og didaktiske overvejelser til dit forløb.</span>
-        <span class="tile-chev">›</span>
-      </div>
-    </div>
+    <!-- Punkt 5: de færdige lærervejledninger (kan foldes ud) – efterfulgt af et tomt punkt 5 til et nyt forløb -->
+    <div id="forloebKortListe"></div>
 
-    <button id="generateBtn" class="btn-primary" type="button">✨ Generér forslag</button>
+    <div class="form-card nyt-forloeb-kort" id="nytForloebKort">
+      <h2><span class="mini-num">5</span> <span id="nytForloebTitel">Lærervejledning</span></h2>
+      <p class="nyt-forloeb-tekst" id="nytForloebTekst">Udfyld punkt 1-4 ovenfor, og generér en lærervejledning med baggrund, læringsmål, aktiviteter, materialer og evaluering til dit forløb.</p>
+      <div class="gen-progress kompakt" hidden>
+        <strong>⏳ Nu genereres lærervejledning …</strong>
+        <div class="gen-bar"><div class="gen-bar-fyld"></div></div>
+        <span class="gen-procent">0 %</span>
+      </div>
+      <button id="generateBtn" class="btn-primary" type="button">✨ Generér lærervejledning</button>
+    </div>
   </section>
 
   <!-- Højre: forslag + gemte forløb -->
@@ -209,12 +212,19 @@
         <span class="badge-generated" id="genBadge" hidden>Genereret forslag</span>
         <button class="btn-icon-print" id="gemForloebBtn" type="button" hidden title="Gem forløb">💾</button>
         <button class="btn-icon-print" id="printAllBtn" type="button" hidden title="Print/download hele forslaget">🖨️</button>
-        <button class="btn-icon-print" id="newForlobBtn" type="button" hidden title="Opret nyt forløb">➕</button>
+        <button class="btn-icon-print" id="newForlobBtn" type="button" hidden title="Lav et nyt forløb">➕</button>
       </div>
     </div>
 
+    <!-- Tydelig besked og ventebjælke, mens lærervejledningen bliver genereret -->
+    <div class="gen-progress" id="genProgress" hidden>
+      <h3>⏳ Nu genereres lærervejledning</h3>
+      <div class="gen-bar"><div class="gen-bar-fyld"></div></div>
+      <p><span class="gen-procent">0 %</span> · Det tager typisk 1-2 minutter. Teksten dukker op herunder, efterhånden som den bliver skrevet.</p>
+    </div>
+
     <div id="suggestionEmpty" class="empty-state">
-      <p>Udfyld Afklaring og dine input til venstre, og tryk på <strong>Generér forslag</strong> for at få et forslag.</p>
+      <p>Udfyld punkt 1-4 til venstre, og tryk på <strong>Generér lærervejledning</strong> for at få et forslag.</p>
     </div>
 
     <div id="suggestionContent" hidden>
@@ -236,6 +246,9 @@
     <ul class="gemte-liste" id="gemteListe"></ul>
   </section>
   </div>
+
+  <!-- En foldet-ud lærervejledning i hele sidens bredde -->
+  <section class="laesning-panel" id="laesningPanel" hidden aria-live="polite"></section>
 
 </div>
 

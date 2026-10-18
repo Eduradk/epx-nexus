@@ -942,3 +942,67 @@ a.input-tile { text-decoration: none; color: inherit; }
 /* Mens AI'en skriver forslaget, kan afsnittene ikke åbnes endnu */
 .suggestion-sections.skrives { pointer-events: none; }
 .suggestion-sections.skrives .tile-chev { visibility: hidden; }
+
+/* ---- Punkt 5: færdige lærervejledninger + tomt punkt til et nyt forløb ---- */
+#forloebKortListe { display: flex; flex-direction: column; gap: 16px; }
+#forloebKortListe:empty { display: none; }
+.forloeb-kort { border-color: var(--green); }
+.forloeb-kort.aktiv { box-shadow: 0 0 0 2px var(--green-light); }
+.forloeb-kort h2 { flex-wrap: wrap; }
+.forloeb-kort .forloeb-meta { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); }
+.forloeb-kort .forloeb-knapper { display: flex; flex-wrap: wrap; gap: 8px; }
+.forloeb-kort .btn-tool.fold { background: var(--navy); color: #fff; border-color: var(--navy); }
+.forloeb-kort .btn-tool.fold:hover { background: var(--navy-dark); }
+.forloeb-kort .btn-tool.farlig:hover { border-color: #b3261e; color: #b3261e; }
+.nyt-forloeb-kort { display: flex; flex-direction: column; gap: 12px; border-style: dashed; border-color: var(--green); }
+.nyt-forloeb-kort h2 { margin: 0; }
+.nyt-forloeb-kort .mini-num.plus { font-size: 15px; }
+.nyt-forloeb-tekst { margin: 0; font-size: 13.5px; color: var(--text-muted); }
+
+/* ---- "Nu genereres lærervejledning" med ventebjælke ---- */
+.gen-progress {
+  background: var(--green-light);
+  border: 1px solid var(--green);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+.gen-progress h3 { margin: 0 0 10px; font-size: 17px; color: var(--navy); }
+.gen-progress p { margin: 8px 0 0; font-size: 13px; color: var(--text-muted); }
+.gen-progress.kompakt { margin: 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.gen-progress.kompakt strong { color: var(--navy); font-size: 14px; }
+.gen-progress.kompakt .gen-procent { font-size: 12.5px; color: var(--text-muted); }
+.gen-bar { height: 12px; background: #fff; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.gen-bar-fyld {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: repeating-linear-gradient(45deg, var(--green) 0 12px, #4f8a6f 12px 24px);
+  background-size: 34px 34px;
+  animation: gen-bar-bevaeg 1s linear infinite;
+  transition: width 0.4s ease;
+}
+@keyframes gen-bar-bevaeg { from { background-position: 0 0; } to { background-position: 34px 0; } }
+@media (prefers-reduced-motion: reduce) { .gen-bar-fyld { animation: none; } }
+
+/* ---- Foldet-ud lærervejledning i hele sidens bredde ---- */
+.laesning-panel {
+  grid-column: 1 / -1;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 32px;
+}
+.laesning-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.laesning-top h2 { margin: 0 0 4px; font-size: 24px; color: var(--navy); }
+.laesning-top p { margin: 0; color: var(--text-muted); }
+.laesning-meta { font-size: 13px; color: var(--text-muted); margin: 6px 0 18px; }
+.laesning-sektion { border-top: 1px solid var(--border); padding: 18px 0 6px; }
+.laesning-sektion-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.laesning-sektion h3 { margin: 0; font-size: 18px; color: var(--navy); }
+.laesning-sektion p, .laesning-sektion li { font-size: 15px; line-height: 1.6; color: var(--text); }
+.laesning-sektion ul { padding-left: 22px; }
+.laesning-sektion h4 { margin: 14px 0 4px; font-size: 15px; color: var(--navy); }
+.laesning-sektion .btn-tool { text-decoration: none; }
+.laesning-bund { display: flex; justify-content: flex-end; margin-top: 12px; }
+@media (max-width: 700px) { .laesning-panel { padding: 20px 16px; } }

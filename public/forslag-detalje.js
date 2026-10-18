@@ -1,5 +1,7 @@
 const params = new URLSearchParams(window.location.search);
 const sektionId = params.get("sektion");
+// Linket fortæller, hvilket af de genererede forløb afsnittet hører til
+if (params.get("forloeb")) saetAktivtForloeb(params.get("forloeb"));
 let sektion = hentForslagSektioner().find((s) => s.id === sektionId);
 
 const sektionTitelEl = document.getElementById("sektionTitel");
@@ -256,7 +258,7 @@ async function justerHeleForslaget(aendring) {
     const res = await fetch("/api/juster", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.assign({ input: samlInputTilAI(), forslag: hentForslag(), sektion: sektionId }, aendring))
+      body: JSON.stringify(Object.assign({ input: forloebInput(), forslag: hentForslag(), sektion: sektionId }, aendring))
     });
     svar = await res.json().catch(() => ({ fejl: "Serveren svarede ikke som forventet (" + res.status + ")." }));
   } catch (e) {
@@ -269,7 +271,7 @@ async function justerHeleForslaget(aendring) {
     visBesked("⚠️ " + (svar.fejl || "Justeringen mislykkedes.") + " Forslaget er uændret.", null, true);
     return false;
   }
-  EpxState.set("forslag", svar.forslag);
+  opdaterForslag(svar.forslag);
   sektion = hentForslagSektioner().find((s) => s.id === sektionId);
   render();
   visBesked("✅ Hele forløbet er tilpasset. Det er ændret:", svar.aendringer);
@@ -379,7 +381,7 @@ const PRODUKT_TYPER = {
       const res = await fetch("/api/produkt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: samlInputTilAI(), forslag: hentForslag(), format: type, beskrivelse: tekst })
+        body: JSON.stringify({ input: forloebInput(), forslag: hentForslag(), format: type, beskrivelse: tekst })
       });
       const svar = await res.json().catch(() => ({}));
       if (!res.ok || !svar.produkt) throw new Error(svar.fejl || "Serveren svarede med fejl " + res.status + ".");
