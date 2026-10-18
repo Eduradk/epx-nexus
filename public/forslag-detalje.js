@@ -4,6 +4,15 @@ const sektionId = params.get("sektion");
 if (params.get("forloeb")) saetAktivtForloeb(params.get("forloeb"));
 let sektion = hentForslagSektioner().find((s) => s.id === sektionId);
 
+// "Tilbage" går til den udfoldede lærervejledning på forsiden – lige ved det punkt, man kom fra
+(function () {
+  const aktivt = hentAktivtForloeb();
+  if (aktivt) {
+    document.getElementById("tilbageLink").href =
+      "index.html?vis=" + encodeURIComponent(aktivt.id) + (sektionId ? "&sektion=" + encodeURIComponent(sektionId) : "");
+  }
+})();
+
 const sektionTitelEl = document.getElementById("sektionTitel");
 const detailBody = document.getElementById("detailBody");
 const detailToolbar = document.getElementById("detailToolbar");

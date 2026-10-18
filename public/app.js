@@ -243,6 +243,8 @@ function harGemtUdkast() {
     // Print af et gemt forløb: kladden er midlertidigt byttet ud – ryd op, når printdialogen lukkes
     window.addEventListener("afterprint", () => { window.location.href = "index.html"; });
     setTimeout(() => window.print(), 700);
+  } else if (params.get("vis")) {
+    // Tilbage fra et punkt i en lærervejledning – håndteres nederst, når forløbene er tegnet
   } else if (harGemtUdkast()) {
     // Intet lige gemt via en underside, men der findes et ældre, ikke-afsluttet udkast
     document.getElementById("draftBanner").hidden = false;
@@ -457,14 +459,17 @@ document.getElementById("mineForloebBtn").addEventListener("click", () => {
   ingenForloebTimer = setTimeout(() => { besked.hidden = true; }, 6000);
 });
 
-function foldUd(id) {
+// Folder et forløb ud. Med sektionId rulles der direkte til det punkt (bruges, når man kommer tilbage fra et punkt).
+function foldUd(id, sektionId) {
   saetAktivtForloeb(id);
   foldetUdId = id;
   renderLaesning();
   laesningPanel.hidden = false;
   showForslag(false);
   renderForloebKort();
-  rulTil(laesningPanel);
+  const punkt = sektionId && document.getElementById("laes-" + sektionId);
+  if (punkt) punkt.scrollIntoView({ block: "start" });
+  else rulTil(laesningPanel);
 }
 
 function foldSammen() {
@@ -524,6 +529,7 @@ function renderLaesning() {
 
   hentForslagSektioner().forEach((s) => {
     const blok = el("div", "laesning-sektion");
+    blok.id = "laes-" + s.id;
     const hoved = el("div", "laesning-sektion-top");
     hoved.appendChild(el("h3", "", s.ikon + " " + s.titel));
     const juster = el("a", "btn-tool", "✏️ Justér dette punkt");
@@ -900,3 +906,14 @@ renderForloebKort();
 if (hentForslag()) showForslag(false);
 renderGemte();
 document.addEventListener("epx-auth-changed", renderGemte);
+
+// Tilbage fra et punkt: fold lærervejledningen ud igen og vis det punkt, man kom fra
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const visId = params.get("vis");
+  if (!visId) return;
+  window.history.replaceState({}, "", window.location.pathname);
+  if (!hentForloebListe().some((f) => f.id === visId)) return;
+  // Vent, til siden er tegnet færdig, så rulningen lander det rigtige sted
+  requestAnimationFrame(() => foldUd(visId, params.get("sektion")));
+})();
