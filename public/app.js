@@ -268,10 +268,6 @@ function visToast(tekst) {
 document.getElementById("draftContinueBtn").addEventListener("click", () => {
   document.getElementById("draftBanner").hidden = true;
 });
-document.getElementById("draftClearBtn").addEventListener("click", () => {
-  document.getElementById("draftBanner").hidden = true;
-  nulstilAlt();
-});
 document.getElementById("ryddeFelterBtn").addEventListener("click", nulstilAlt);
 
 // ---- Byg "Dit forslag": hero-billede (kun hvis erhvervsområde er valgt) + klikbare afsnit ----
