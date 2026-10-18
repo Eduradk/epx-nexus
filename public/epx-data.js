@@ -566,28 +566,40 @@ function eksportSektionTekst(sektion) {
   return linjer.join("\n");
 }
 
-function eksportMaterialer() {
+// Elevudgaven har ingen note til underviseren på hver opgave
+function eksportMaterialer(tilElever) {
   return genererMaterialer().map((m) => ({
     title: m.type + ": " + m.titel,
-    source: "AI-genereret materiale – skal gennemgås af underviseren før brug",
+    source: tilElever ? "" : "AI-genereret materiale – skal gennemgås af underviseren før brug",
     content: m.krop.join("\n")
   }));
 }
 
-// Hele forslaget (forsiden)
-function bygForslagEksport() {
+// Hvad der kommer med i filen: "hele" forløbet, kun "vejledning" (lærerens del) eller "elev" (opgaver til eleverne)
+const EKSPORT_VARIANTER = {
+  hele: { kind: "Forløbsforslag", filnavn: "Forløb" },
+  vejledning: { kind: "Lærervejledning", filnavn: "Lærervejledning" },
+  elev: { kind: "Opgaver til eleverne", filnavn: "Elevopgaver" }
+};
+
+function bygForslagEksport(variant) {
   const forslag = hentForslag();
   if (!forslag || forslagUdkast) return null;
+  const v = EKSPORT_VARIANTER[variant] ? variant : "hele";
+  const sektioner = hentForslagSektioner()
+    .filter((s) => !s.dynamisk)
+    .map((s) => ({ heading: s.titel, body: eksportSektionTekst(s) }));
   return {
-    filename: "Forløb " + forslag.titel,
-    kind: "Forløbsforslag",
+    filename: EKSPORT_VARIANTER[v].filnavn + " " + forslag.titel,
+    kind: EKSPORT_VARIANTER[v].kind,
     title: forslag.titel,
     subtitle: forslag.undertitel || "",
-    meta: eksportMeta(),
-    sections: hentForslagSektioner()
-      .filter((s) => !s.dynamisk)
-      .map((s) => ({ heading: s.titel, body: eksportSektionTekst(s) })),
-    materials: eksportMaterialer()
+    // Eleverne skal kun se fag og dato – ikke lærerens planlægningsoplysninger
+    meta: v === "elev" ? eksportMeta().filter((r) => r[0] === "Fag" || r[0] === "Dato") : eksportMeta(),
+    sections: v === "elev" ? [] : sektioner,
+    materials: v === "vejledning" ? [] : eksportMaterialer(v === "elev"),
+    // Elevudgaven: én opgave pr. side / slide, så den kan bruges direkte
+    materialeSider: v === "elev"
   };
 }
 

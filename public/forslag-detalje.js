@@ -329,6 +329,17 @@ saveEditBtn.addEventListener("click", () => {
 // ---- Udarbejd dit eget med AI: PowerPoint eller Word-dokument, der passer til forløbet ----
 // AI'en skriver indholdet (api/produkt.js), og filen bygges i browseren af export.js.
 const PRODUKT_TYPER = {
+  // Podcast og video er kun vist som mockup – de kan ikke bestilles endnu
+  podcast: {
+    mockup: true,
+    btn: "🎙️ Podcast (ikke aktiv endnu)",
+    note: "🎙️ Podcast er på vej. Her kan du snart få AI'en til at lave en kort podcast til eleverne om forløbets emne. Funktionen er ikke åben endnu, fordi den koster meget at holde kørende. PowerPoint og Word kan du bruge allerede nu."
+  },
+  video: {
+    mockup: true,
+    btn: "🎬 Video (ikke aktiv endnu)",
+    note: "🎬 Video med AI-avatar er på vej. Her kan du snart få en kort video, hvor en AI-avatar forklarer forløbets emne for eleverne. Funktionen er ikke åben endnu, fordi den koster meget at holde kørende. PowerPoint og Word kan du bruge allerede nu."
+  },
   powerpoint: {
     hint: "Beskriv, hvad PowerPointen skal handle om. AI'en udarbejder en præsentation, der passer til forløbet. Du henter den som .pptx-fil og kan selv redigere den i PowerPoint bagefter.",
     placeholder: "Fx: En præsentation, der introducerer forløbet og de vigtigste begreber for eleverne",
@@ -357,12 +368,24 @@ const PRODUKT_TYPER = {
   const status = document.getElementById("produktStatus");
   let valgt = "powerpoint";
 
+  // Note til podcast/video (mockup), der vises i stedet for vejledningsteksten
+  const mockupNote = document.createElement("p");
+  mockupNote.className = "produkt-mockup-note";
+  mockupNote.hidden = true;
+  hint.parentNode.insertBefore(mockupNote, hint);
+
   function vaelg(type) {
+    const cfg = PRODUKT_TYPER[type];
     valgt = type;
     vaelger.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.type === type));
-    hint.textContent = PRODUKT_TYPER[type].hint;
-    beskrivelse.placeholder = PRODUKT_TYPER[type].placeholder;
-    knap.textContent = PRODUKT_TYPER[type].btn;
+    mockupNote.hidden = !cfg.mockup;
+    mockupNote.textContent = cfg.note || "";
+    hint.hidden = !!cfg.mockup;
+    beskrivelse.hidden = !!cfg.mockup;
+    hint.textContent = cfg.hint || "";
+    beskrivelse.placeholder = cfg.placeholder || "";
+    knap.textContent = cfg.btn;
+    knap.disabled = !!cfg.mockup;
     status.hidden = true;
   }
   vaelger.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => vaelg(b.dataset.type)));
@@ -375,6 +398,7 @@ const PRODUKT_TYPER = {
   }
 
   knap.addEventListener("click", async () => {
+    if (PRODUKT_TYPER[valgt].mockup) return; // podcast/video er ikke aktive endnu
     const tekst = beskrivelse.value.trim();
     if (!tekst) {
       beskrivelse.focus();
@@ -413,7 +437,7 @@ const PRODUKT_TYPER = {
     } catch (err) {
       visStatus("⚠️ " + (err.message || "Kunne ikke udarbejde materialet. Prøv igen om lidt."), true);
     } finally {
-      knap.disabled = false;
+      knap.disabled = !!PRODUKT_TYPER[valgt].mockup;
       knap.textContent = PRODUKT_TYPER[valgt].btn;
     }
   });

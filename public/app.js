@@ -527,6 +527,20 @@ function renderLaesning() {
   const meta = eksportMeta().map((r) => r[0] + ": " + r[1]).join(" · ");
   laesningPanel.appendChild(el("p", "laesning-meta", meta));
 
+  // Hent eller print: vælg indhold (hele forløbet, kun lærerens del eller kun elevernes opgaver) og derefter filtype
+  const eksport = el("div", "laesning-eksport");
+  eksport.appendChild(el("span", "laesning-eksport-label", "Hent eller print:"));
+  let anker = el("span");
+  eksport.appendChild(anker);
+  laesningPanel.appendChild(eksport);
+  [
+    ["hele", "📘 Hele forløbet"],
+    ["vejledning", "🧑‍🏫 Kun lærervejledningen"],
+    ["elev", "✏️ Opgaver til eleverne"]
+  ].forEach(([variant, tekst]) => {
+    anker = EpxExport.attachMenu(anker, () => bygForslagEksport(variant), { html: tekst + " ▾" });
+  });
+
   hentForslagSektioner().forEach((s) => {
     const blok = el("div", "laesning-sektion");
     blok.id = "laes-" + s.id;
