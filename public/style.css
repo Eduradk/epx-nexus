@@ -1006,3 +1006,29 @@ a.input-tile { text-decoration: none; color: inherit; }
 .laesning-sektion .btn-tool { text-decoration: none; }
 .laesning-bund { display: flex; justify-content: flex-end; margin-top: 12px; }
 @media (max-width: 700px) { .laesning-panel { padding: 20px 16px; } }
+
+/* ---- Mine forløb (under punkt 5) + knappen øverst ---- */
+.mine-forloeb { display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 16px; }
+.mine-forloeb > h2 { margin: 8px 0 0; font-size: 18px; color: var(--navy); }
+.antal-badge {
+  background: var(--green);
+  color: #fff;
+  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ingen-forloeb-besked {
+  margin: 10px 0 0;
+  display: inline-block;
+  background: var(--green-light);
+  border: 1px solid var(--green);
+  color: var(--navy);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13.5px;
+}

@@ -42,7 +42,9 @@
     <div class="page-header-actions">
       <a href="erhverv.html" id="guideBtn" class="btn-guide">🧭 Guide mig igennem forløbet</a>
       <button id="ryddeFelterBtn" class="btn-tool" type="button">🗑️ Ryd alle felter</button>
+      <button id="mineForloebBtn" class="btn-tool" type="button">📚 Mine forløb <span class="antal-badge" id="mineForloebAntal" hidden></span></button>
     </div>
+    <p class="ingen-forloeb-besked" id="ingenForloebBesked" hidden>Du har ingen forløb endnu. Når du har genereret en lærervejledning, finder du den her.</p>
   </div>
 
   <div class="toast-banner draft-banner" id="draftBanner" hidden>
@@ -183,12 +185,10 @@
       <button id="afklaringSkipBtn" class="btn-skip" type="button">Ikke relevant</button>
     </div>
 
-    <!-- Punkt 5: de færdige lærervejledninger (kan foldes ud) – efterfulgt af et tomt punkt 5 til et nyt forløb -->
-    <div id="forloebKortListe"></div>
-
+    <!-- Punkt 5: generér en ny lærervejledning -->
     <div class="form-card nyt-forloeb-kort" id="nytForloebKort">
-      <h2><span class="mini-num">5</span> <span id="nytForloebTitel">Lærervejledning</span></h2>
-      <p class="nyt-forloeb-tekst" id="nytForloebTekst">Udfyld punkt 1-4 ovenfor, og generér en lærervejledning med baggrund, læringsmål, aktiviteter, materialer og evaluering til dit forløb.</p>
+      <h2><span class="mini-num">5</span> ＋ Generér ny lærervejledning</h2>
+      <p class="nyt-forloeb-tekst">Udfyld punkt 1-4 ovenfor, og generér en lærervejledning med baggrund, læringsmål, aktiviteter, materialer og evaluering til dit forløb. Den lægger sig under "Mine forløb" herunder.</p>
       <div class="gen-progress kompakt" hidden>
         <strong>⏳ Nu genereres lærervejledning …</strong>
         <div class="gen-bar"><div class="gen-bar-fyld"></div></div>
@@ -196,6 +196,12 @@
       </div>
       <button id="generateBtn" class="btn-primary" type="button">✨ Generér lærervejledning</button>
     </div>
+
+    <!-- Mine forløb: de færdige lærervejledninger, som kan foldes ud (knappen "Mine forløb" øverst hopper hertil) -->
+    <section class="mine-forloeb" id="mineForloeb" hidden>
+      <h2>📚 Mine forløb</h2>
+      <div id="forloebKortListe"></div>
+    </section>
   </section>
 
   <!-- Højre: forslag + gemte forløb -->

@@ -236,7 +236,7 @@ function harGemtUdkast() {
     const aktivt = hentAktivtForloeb();
     const t = (aktivt && aktivt.titel) || "forløbet";
     visToast(aktivt && aktivt.gemtId
-      ? "✏️ \"" + t + "\" er åbnet – det ligger som et punkt 5, og du ændrer i det gemte forløb. Tryk 💾 for at gemme ændringerne."
+      ? "✏️ \"" + t + "\" er åbnet under \"Mine forløb\", og du ændrer i det gemte forløb. Tryk 💾 for at gemme ændringerne."
       : "➕ Nyt forløb oprettet ud fra \"" + t.replace(/ \(kopi\)$/, "") + "\". Det gemte forløb er uændret. Tryk 💾 for at gemme det nye.");
     window.history.replaceState({}, "", window.location.pathname);
   } else if (params.get("utskrift") === "1") {
@@ -368,8 +368,8 @@ function visFejlTilHoejre(tekst) {
 }
 
 /* ---------------------------------------------------------
-   Punkt 5: én boks pr. færdig lærervejledning (kan foldes ud i hele bredden)
-   og til sidst et tomt punkt 5 med ＋ til et nyt forløb.
+   Punkt 5 genererer en ny lærervejledning. Under det ligger "Mine forløb" med én boks
+   pr. færdig lærervejledning, som kan foldes ud i hele sidens bredde.
 --------------------------------------------------------- */
 const laesningPanel = document.getElementById("laesningPanel");
 let foldetUdId = null;
@@ -389,7 +389,7 @@ function renderForloebKort() {
     kort.className = "form-card forloeb-kort" + (aktivt && aktivt.id === f.id ? " aktiv" : "");
 
     const h2 = document.createElement("h2");
-    h2.innerHTML = '<span class="mini-num">5</span> <span>📘</span> <span class="forloeb-titel"></span>';
+    h2.innerHTML = '<span>📘</span> <span class="forloeb-titel"></span>';
     h2.querySelector(".forloeb-titel").textContent = forloebTitel(f);
 
     const meta = document.createElement("p");
@@ -423,16 +423,39 @@ function renderForloebKort() {
     holder.appendChild(kort);
   });
 
-  // Det tomme punkt 5: før første forløb hedder det "Lærervejledning", bagefter "＋ Nyt læringsforløb"
+  // "Mine forløb" vises kun, når der er noget i den – og knappen øverst viser antallet
   const harForloeb = liste.length > 0;
-  document.getElementById("nytForloebTitel").textContent = harForloeb ? "＋ Nyt læringsforløb" : "Lærervejledning";
-  document.getElementById("nytForloebTekst").textContent = harForloeb
-    ? "Felterne i punkt 1-4 er klar til et nyt forløb. Udfyld dem, og generér en ny lærervejledning. Dine færdige lærervejledninger ligger ovenfor."
-    : "Udfyld punkt 1-4 ovenfor, og generér en lærervejledning med baggrund, læringsmål, aktiviteter, materialer og evaluering til dit forløb.";
+  document.getElementById("mineForloeb").hidden = !harForloeb;
+  const antal = document.getElementById("mineForloebAntal");
+  antal.textContent = liste.length;
+  antal.hidden = !harForloeb;
+  if (harForloeb) document.getElementById("ingenForloebBesked").hidden = true;
   stepItems.forEach((item) => {
     if (Number(item.dataset.step) === 5) item.classList.toggle("done", harForloeb);
   });
 }
+
+// Ruller blødt ned til et element. Har browseren slået blød rulning fra, hoppes der direkte i stedet.
+function rulTil(el) {
+  const foer = window.scrollY;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  setTimeout(() => {
+    if (window.scrollY === foer && Math.abs(el.getBoundingClientRect().top) > 40) el.scrollIntoView({ block: "start" });
+  }, 600);
+}
+
+// "Mine forløb" øverst: hop ned til forløbene – eller sig, at der ikke er nogen endnu (uden at flytte siden)
+let ingenForloebTimer = null;
+document.getElementById("mineForloebBtn").addEventListener("click", () => {
+  if (hentForloebListe().length) {
+    rulTil(document.getElementById("mineForloeb"));
+    return;
+  }
+  const besked = document.getElementById("ingenForloebBesked");
+  besked.hidden = false;
+  clearTimeout(ingenForloebTimer);
+  ingenForloebTimer = setTimeout(() => { besked.hidden = true; }, 6000);
+});
 
 function foldUd(id) {
   saetAktivtForloeb(id);
@@ -441,7 +464,7 @@ function foldUd(id) {
   laesningPanel.hidden = false;
   showForslag(false);
   renderForloebKort();
-  laesningPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  rulTil(laesningPanel);
 }
 
 function foldSammen() {
@@ -584,7 +607,7 @@ function visUdkast(udkast) {
   suggestionContent.hidden = false;
 }
 
-// "Generér lærervejledning" sender ALLE input til AI'en. Når forslaget er færdigt, bliver det et punkt 5
+// "Generér lærervejledning" sender ALLE input til AI'en. Når forslaget er færdigt, kommer det under "Mine forløb"
 // med sine egne valg, og felterne ryddes til et nyt forløb.
 generateBtn.addEventListener("click", async () => {
   const raaValg = kopierInput(EpxState.get());
@@ -660,7 +683,7 @@ generateBtn.addEventListener("click", async () => {
   rydInput();
   renderForloebKort();
   showForslag(true);
-  visToast("✅ Lærervejledningen \"" + svar.forslag.titel + "\" er klar under punkt 5. Felterne er ryddet, så du kan lave et nyt forløb. Vil du ændre noget i den færdige, så åbn de enkelte punkter og brug \"Justér med AI\" eller \"Rediger manuelt\".");
+  visToast("✅ Lærervejledningen \"" + svar.forslag.titel + "\" er klar under \"Mine forløb\". Felterne er ryddet, så du kan lave et nyt forløb. Vil du ændre noget i den færdige, så åbn de enkelte punkter og brug \"Justér med AI\" eller \"Rediger manuelt\".");
 
   // Info om manglende login vises kun første gang – og slet ikke, hvis man er logget ind
   if (!EpxAuth.isLoggedIn() && !EpxState.get().harVistGemPopup) {
@@ -682,9 +705,9 @@ generateBtn.addEventListener("click", async () => {
 
 document.getElementById("printAllBtn").addEventListener("click", () => window.print());
 
-// ---- "Ryd alle felter": rydder punkt 1-4. De færdige lærervejledninger i punkt 5 bliver liggende. ----
+// ---- "Ryd alle felter": rydder punkt 1-4. De færdige lærervejledninger under "Mine forløb" bliver liggende. ----
 function nulstilAlt() {
-  if (!confirm("Er du sikker? Felterne i punkt 1-4 bliver ryddet, så du kan starte et nyt forløb. Dine færdige lærervejledninger i punkt 5 bliver liggende.")) return;
+  if (!confirm("Er du sikker? Felterne i punkt 1-4 bliver ryddet, så du kan starte et nyt forløb. Dine færdige lærervejledninger under \"Mine forløb\" bliver liggende.")) return;
   rydInput();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -827,7 +850,7 @@ function renderGemte() {
 function bedOmAtAabne(f) {
   forloebDerSkalAabnes = f;
   document.getElementById("aabnModalTekst").textContent =
-    "\"" + f.titel + "\" er gemt. Vil du ændre i det gemte forløb, eller skal der oprettes et nyt forløb ud fra det, så det gemte forbliver uændret? Det åbnes som et punkt 5 på forsiden.";
+    "\"" + f.titel + "\" er gemt. Vil du ændre i det gemte forløb, eller skal der oprettes et nyt forløb ud fra det, så det gemte forbliver uændret? Det åbnes under \"Mine forløb\" på forsiden.";
   aabnModal.hidden = false;
 }
 
