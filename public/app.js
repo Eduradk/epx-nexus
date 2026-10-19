@@ -80,26 +80,24 @@ restoreFormState();
 saerligeOensker.addEventListener("input", () => {
   charCount.textContent = saerligeOensker.value.length;
   saveFormState();
+  markProgress();
 });
 
-// Markér trin som "gjort" når felterne udfyldes
+// Fluebenene i trin-menuen viser KUN, hvor langt man er nået med det forløb, man er i gang med at udfylde.
+// Punkt 5 (generér) får aldrig flueben – når en lærervejledning er færdig, ryddes felterne til et nyt forløb.
 function markProgress() {
   const afklaringsgrad = document.getElementById("afklaringsgrad").value;
   const afklaringsfokusValgt = document.querySelectorAll('input[name="afklaringsfokus"]:checked').length > 0;
   const fag = document.getElementById("fag").value;
   const fagAndet = document.getElementById("fagAndet").value.trim();
-  const fagUdfyldt = fag && (fag !== "Andet fag" || fagAndet);
-  stepItems.forEach((item) => {
-    const step = Number(item.dataset.step);
-    if (step === 1) item.classList.toggle("done", !!fagUdfyldt);
-    if (step === 4) {
-      if (afklaringSkipped || (afklaringsgrad && afklaringsfokusValgt)) {
-        item.classList.add("done");
-      } else {
-        item.classList.remove("done");
-      }
-    }
-  });
+  const udfyldt = {
+    1: !!(fag && (fag !== "Andet fag" || fagAndet)),
+    2: DINE_INPUT_REKKEFOLGE.some((key) => erFeltUdfyldt(key)),
+    3: !!saerligeOensker.value.trim(),
+    4: !!(afklaringSkipped || (afklaringsgrad && afklaringsfokusValgt)),
+    5: false
+  };
+  stepItems.forEach((item) => item.classList.toggle("done", udfyldt[Number(item.dataset.step)]));
 }
 document.getElementById("afklaringsgrad").addEventListener("change", () => { markProgress(); saveFormState(); });
 document.querySelectorAll('input[name="afklaringsfokus"]').forEach((cb) => {
@@ -432,9 +430,6 @@ function renderForloebKort() {
   antal.textContent = liste.length;
   antal.hidden = !harForloeb;
   if (harForloeb) document.getElementById("ingenForloebBesked").hidden = true;
-  stepItems.forEach((item) => {
-    if (Number(item.dataset.step) === 5) item.classList.toggle("done", harForloeb);
-  });
 }
 
 // Ruller blødt ned til et element. Har browseren slået blød rulning fra, hoppes der direkte i stedet.
@@ -747,9 +742,6 @@ function rydInput() {
   afklaringSkipBtn.classList.remove("active");
   afklaringSkipBtn.textContent = "Ikke relevant";
   document.getElementById("draftBanner").hidden = true;
-  stepItems.forEach((item) => {
-    if (Number(item.dataset.step) <= 4) item.classList.remove("done");
-  });
   markProgress();
   renderAlleDineInputTiles();
 }
