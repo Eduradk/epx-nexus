@@ -7,7 +7,9 @@ const EPX_GRENE = [
     ikon: "🛡️",
     accent: "navy",
     beskrivelse: "Det pædagogiske og socialfaglige område samt sundheds- og sikkerhedsområdet.",
-    erhverv: ["Pædagogisk assistent", "Social- og sundhedsassistent", "Social- og sundhedshjælper", "Ambulancebehandler", "Sikkerhedsvagt", "Tandklinikassistent", "Audiologi- og neurofysiologitekniker", "Serviceassistent"]
+    erhverv: ["Pædagogisk assistent", "Social- og sundhedsassistent", "Social- og sundhedshjælper", "Ambulancebehandler", "Sikkerhedsvagt", "Tandklinikassistent", "Audiologi- og neurofysiologitekniker", "Serviceassistent"],
+    // Professionsbacheloruddannelser (PBA) – navne som på ug.dk
+    pba: ["Pædagog", "Socialrådgiver", "Diakoni og socialpædagogik", "Lærer i folkeskolen", "Sygeplejerske", "Jordemoder", "Fysioterapeut", "Ergoterapeut", "Psykomotorisk terapeut", "Bioanalytiker", "Radiograf", "Tandplejer", "Klinisk tandtekniker", "Optometrist", "Protese- og ortoseteknologi", "Ernæring og sundhed", "Sundhedsteknologi (diplomingeniør)", "Dansk tegnsprogstolk", "Civilsamfundsudvikling", "Offentlig administration", "Katastrofe- og risikomanager", "Cybersikkerhed", "Cybersikkerhed (diplomingeniør)"]
   },
   {
     id: "natur",
@@ -15,7 +17,9 @@ const EPX_GRENE = [
     ikon: "🌱",
     accent: "green",
     beskrivelse: "Jordbrug, skovbrug, naturforvaltning, teknik og miljø, biotek samt fødevareområdet.",
-    erhverv: ["Landbrugsuddannelsen (landmand)", "Skov- og naturtekniker", "Anlægsgartner", "Dyrepasser", "Veterinærsygeplejerske", "Ernæringsassistent", "Gastronom (kok)", "Bager og konditor", "Mejerist", "Procesoperatør"]
+    erhverv: ["Landbrugsuddannelsen (landmand)", "Skov- og naturtekniker", "Anlægsgartner", "Dyrepasser", "Veterinærsygeplejerske", "Ernæringsassistent", "Gastronom (kok)", "Bager og konditor", "Mejerist", "Procesoperatør"],
+    // Professionsbacheloruddannelser (PBA) – navne som på ug.dk
+    pba: ["Natur og jordbrugsproduktion", "Skov- og landskabsingeniør", "Urban landskabsingeniør", "Fødevareteknologi og applikation", "Fødevareteknologi (diplomingeniør)", "Fødevaresikkerhed og -kvalitet (diplomingeniør)", "Fiskeriteknologi (diplomingeniør)", "Bioteknologi (diplomingeniør)", "Kemi- og bioteknologi (diplomingeniør)", "Kemiteknologi (diplomingeniør)", "Kemiteknik og international business (diplomingeniør)", "Bæredygtig energiteknik (diplomingeniør)", "Klima- og forsyningsteknik (diplomingeniør)", "Proces og innovation (diplomingeniør)"]
   },
   {
     id: "business",
@@ -23,7 +27,9 @@ const EPX_GRENE = [
     ikon: "💼",
     accent: "purple",
     beskrivelse: "Det merkantile område – handel, markedsføring, økonomi og innovation.",
-    erhverv: ["Kontoruddannelsen", "Detailhandelsuddannelsen (salgsassistent)", "Handelsuddannelsen (handelsassistent)", "Finansuddannelsen", "Eventkoordinator", "Hotelreceptionist", "Mediegrafiker", "Webudvikler"]
+    erhverv: ["Kontoruddannelsen", "Detailhandelsuddannelsen (salgsassistent)", "Handelsuddannelsen (handelsassistent)", "Finansuddannelsen", "Eventkoordinator", "Hotelreceptionist", "Mediegrafiker", "Webudvikler"],
+    // Professionsbacheloruddannelser (PBA) – navne som på ug.dk
+    pba: ["Finans", "Skat", "E-commerce og digital marketing", "Event management og økonomi", "Eksport og teknologi", "Fremmedsprog og digital markedskommunikation", "Kommunikation", "Journalist", "Fotojournalist", "Medieproduktion og ledelse", "Business og vandteknologi", "Procesøkonomi og værdikædeledelse", "It-arkitektur", "Økonomi og informationsteknologi", "It og økonomi (diplomingeniør)", "Forretningsudvikling (diplomingeniør)", "Global business og teknologi (diplomingeniør)", "Global ledelse og design af produktionsnetværk (diplomingeniør)", "Globale forretningssystemer (diplomingeniør)"]
   },
   {
     id: "haandvaerk",
@@ -31,7 +37,9 @@ const EPX_GRENE = [
     ikon: "🛠️",
     accent: "blue",
     beskrivelse: "Byggeri, industri, energiforsyning, design og kunsthåndværk.",
-    erhverv: ["Tømrer", "Bygningssnedker", "Møbelsnedker", "Murer", "Elektriker", "VVS-energiuddannelsen (vvs'er)", "Smed", "Industritekniker", "Teknisk designer", "Beklædningshåndværker", "Guld- og sølvsmed"]
+    erhverv: ["Tømrer", "Bygningssnedker", "Møbelsnedker", "Murer", "Elektriker", "VVS-energiuddannelsen (vvs'er)", "Smed", "Industritekniker", "Teknisk designer", "Beklædningshåndværker", "Guld- og sølvsmed"],
+    // Professionsbacheloruddannelser (PBA) – navne som på ug.dk
+    pba: ["Bygningskonstruktør", "Bygning (diplomingeniør)", "Bygningsdesign (diplomingeniør)", "Arktisk byggeri og infrastruktur (diplomingeniør)", "Maskinmester", "Maskinteknik (diplomingeniør)", "Produktion (diplomingeniør)", "Industriel teknologi (diplomingeniør)", "Mechatronics (diplomingeniør)", "Robotteknologi (diplomingeniør)", "Elektrisk energiteknologi (diplomingeniør)", "Elektronik (diplomingeniør)", "Elektroteknologi (diplomingeniør)", "Computer engineering (diplomingeniør)", "Softwareteknologi (diplomingeniør)", "Design og anvendelse af kunstig intelligens (diplomingeniør)", "Integreret design (diplomingeniør)", "Mobilitet, transport og logistik (diplomingeniør)", "Skibsfører", "Skibsofficer", "Skibsteknik og maritimt design (diplomingeniør)", "Smykker, teknologi og business", "Tekstildesign, -håndværk og formidling", "Crafts in Glass and Ceramics", "Visuel kommunikation", "Grafisk kommunikation", "Graphic Storytelling", "Animation", "Lyddesign", "Multiplatform Storytelling and Production", "Filmproduktionsledelse", "Tv- og medietilrettelæggelse"]
   }
 ];
 
@@ -524,8 +532,10 @@ function samlInputTilAI(d) {
     erhverv: {
       omraade: gren ? gren.navn : "",
       omraadeBeskrivelse: gren ? gren.beskrivelse : "",
-      // Kun erhvervsuddannelser, der stadig findes på listen (ældre gemte valg kan indeholde udgåede navne)
+      // Kun uddannelser, der stadig findes på listen (ældre gemte valg kan indeholde udgåede navne).
+      // Valgene ligger samlet i specifikke og deles her op i erhvervsuddannelser (EUD) og professionsbachelorer (PBA).
       specifikke: ((d.erhverv && d.erhverv.specifikke) || []).filter((navn) => gren && gren.erhverv.includes(navn)),
+      pba: ((d.erhverv && d.erhverv.specifikke) || []).filter((navn) => gren && (gren.pba || []).includes(navn)),
       fritekst: (d.erhverv && d.erhverv.fritekst) || ""
     },
     lokaler: d.lokaler || null,
@@ -550,6 +560,7 @@ function eksportMeta() {
     ["Fag", i.fag || ""],
     ["Erhvervsområde", i.erhverv.omraade],
     ["Erhvervsuddannelser", i.erhverv.specifikke.join(", ")],
+    ["Professionsbachelorer", (i.erhverv.pba || []).join(", ")],
     ["Tidsramme", (i.formaal && i.formaal.tidsrammeValg) || ""],
     ["Dato", new Date().toLocaleDateString("da-DK", { day: "numeric", month: "long", year: "numeric" })]
   ].filter((r) => r[1]);

@@ -1044,3 +1044,7 @@ a.input-tile { text-decoration: none; color: inherit; }
 
 /* Låste knapper (fx podcast/video, der ikke er åbne endnu) skal tydeligt se låste ud */
 .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Erhverv: overskrift over gruppen af EUD- og PBA-uddannelser */
+.checkbox-list .uddannelse-gruppe { grid-column: 1 / -1; margin: 10px 0 0; font-size: 14px; color: var(--navy); }
+.checkbox-list .uddannelse-gruppe:first-child { margin-top: 0; }

@@ -63,8 +63,8 @@ function system(format) {
 
 ${format.krav}
 
-Materialet skal passe til lærerens forløb (fag, erhvervsuddannelser, niveau og tidsramme), som du får oplyst.
-Fokus er udelukkende på erhvervsuddannelser (EUD og EUX): nævn ikke professionsbachelor-, erhvervsakademi- eller universitetsuddannelser.
+Materialet skal passe til lærerens forløb (fag, valgte uddannelser, niveau og tidsramme), som du får oplyst.
+Tag afsæt i de valgte erhvervsuddannelser (EUD) og professionsbacheloruddannelser (PBA). Er der valgt PBA-uddannelser, så hent inspiration fra deres fagområder, praksis og arbejdsopgaver. Nævn ikke erhvervsakademi- eller universitetsuddannelser.
 Brug ikke markdown-symboler som **, # eller * i teksten.
 Al tekst skal være på korrekt dansk med dansk stavning – brug aldrig engelske ord eller stavemåder (skriv fx "hal", ikke "hall"). Skriv ikke hele ord med store bogstaver.
 Hold teksten kort, så den kan stå på et slide eller en side uden at blive klemt: punkter på højst ca. 15 ord.`;

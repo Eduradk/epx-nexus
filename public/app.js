@@ -150,7 +150,7 @@ function summarizeDineInput(key, data) {
     if (!data || !data.hovedomraade) return null;
     const gren = EPX_GRENE.find((g) => g.id === data.hovedomraade);
     const antal = (data.specifikke || []).length;
-    return gren ? gren.navn + (antal ? " · " + antal + " erhverv valgt" : "") : "Udfyldt";
+    return gren ? gren.navn + (antal ? " · " + antal + " uddannelser valgt" : "") : "Udfyldt";
   }
   const felt = DINE_INPUT_FELTER[key];
   if (!felt || !data) return null;

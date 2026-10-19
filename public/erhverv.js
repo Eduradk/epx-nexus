@@ -9,14 +9,30 @@ function renderErhvervOptions(grenId, checkedList) {
   const gren = EPX_GRENE.find((g) => g.id === grenId);
   if (!gren) return;
   checkboxList.innerHTML = "";
-  gren.erhverv.forEach((navn) => {
-    const id = "erhverv-" + navn.replace(/[^a-zA-Z0-9]/g, "");
-    const label = document.createElement("label");
-    label.className = "checkbox-item";
-    label.innerHTML =
-      '<input type="checkbox" value="' + navn + '" id="' + id + '"' +
-      (checkedList.includes(navn) ? " checked" : "") + "> <span>" + navn + "</span>";
-    checkboxList.appendChild(label);
+  // To grupper: erhvervsuddannelser (EUD) og professionsbacheloruddannelser (PBA)
+  [
+    ["Erhvervsuddannelser (EUD)", gren.erhverv],
+    ["Professionsbacheloruddannelser (PBA)", gren.pba || []]
+  ].forEach(([overskrift, navne]) => {
+    if (!navne.length) return;
+    const titel = document.createElement("h3");
+    titel.className = "uddannelse-gruppe";
+    titel.textContent = overskrift;
+    checkboxList.appendChild(titel);
+    navne.forEach((navn) => {
+      const label = document.createElement("label");
+      label.className = "checkbox-item";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = navn;
+      input.checked = checkedList.includes(navn);
+      const span = document.createElement("span");
+      span.textContent = navn;
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(" "));
+      label.appendChild(span);
+      checkboxList.appendChild(label);
+    });
   });
   specifikkeSection.hidden = false;
 }
